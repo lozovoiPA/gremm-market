@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
+    kotlin("plugin.serialization") version "2.0.21"
 }
 
 android {
@@ -37,9 +38,13 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.runtime)
+    implementation(libs.androidx.ui)
     val composeBom = platform("androidx.compose:compose-bom:2026.08.00")
     implementation(composeBom)
     androidTestImplementation(composeBom)
+
+    implementation(libs.material.icons.extended)
 
     implementation("androidx.compose.material3:material3")
     implementation("androidx.compose.ui:ui-tooling-preview")
@@ -54,4 +59,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+
+    val nav_version = "2.10.2"
+    implementation("androidx.navigation:navigation-compose:${nav_version}")
 }
