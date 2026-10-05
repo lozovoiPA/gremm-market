@@ -10,5 +10,8 @@
 
     <color name="MarketBackground">#FFFFFFFF</color>
     <color name="MarketAccent">#FFF0F3F8</color>
+    <color name="AccountBackground">#FFEEEEEE</color>
+    <color name="AccountMenuCardBackground">#FFFFFFFF</color>
+    <color name="ClickRippleColor">#FF01875F</color>
     <color name="MarketSystemArea">#FF000000</color>
 </resources>

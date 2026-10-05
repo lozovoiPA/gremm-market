@@ -1,5 +1,6 @@
 package com.implus.gremmarket.ui
 
+import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -27,6 +28,6 @@ fun AppNavHost() {
                 }
             )
         }
-        composable<Account> { AccountScreen() }
+        composable<Account> { /*AccountScreen()*/ Scaffold() {c -> c} }
     }
 }
