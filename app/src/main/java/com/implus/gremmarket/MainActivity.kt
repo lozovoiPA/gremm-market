@@ -23,6 +23,8 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.colorResource
 import com.implus.gremmarket.ui.AccountScreenContent
 import com.implus.gremmarket.ui.AccountScreenScaffold
+import com.implus.gremmarket.ui.DeviceAppsScreenContent
+import com.implus.gremmarket.ui.DeviceAppsScreenScaffold
 
 class MainActivity : ComponentActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,7 +34,19 @@ class MainActivity : ComponentActivity(){
 
         setContent {
             //AppNavHost()
-            AccountScreen()
+            //AccountScreen()
+            DeviceAppsScreen()
+        }
+    }
+}
+
+@Composable
+fun DeviceAppsScreen() {
+    SystemSurface() { modifier ->
+        DeviceAppsScreenScaffold(
+            modifier = modifier
+        ) { contentPadding, innerModifier ->
+            DeviceAppsScreenContent(contentPadding, innerModifier)
         }
     }
 }

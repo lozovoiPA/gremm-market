@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -49,7 +48,6 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -137,7 +135,7 @@ fun AccountScreenContent(
                         MenuItemData(icon = Icons.Outlined.Help, title = "Справка/отзыв")
                     )
                 )
-                Footer()
+                AccountFooter()
             }
         }
     }
@@ -184,7 +182,7 @@ fun MenuListItem(
         modifier = Modifier
             .clickable(
                 onClick = {},
-                indication = ripple(color = colorResource(R.color.ClickRippleColor)), // Анимация зеленого эффекта по нажатию. Судя по докам должна быть по дефолту из М3, но почему-то у меня нет
+                indication = ripple(color = colorResource(R.color.ClickRippleGreen)), // Анимация зеленого эффекта по нажатию. Судя по докам должна быть по дефолту из М3, но почему-то у меня нет
                 interactionSource = remember { MutableInteractionSource() },
                 role = Role.Button
             ),
@@ -250,15 +248,14 @@ fun MenuDivider() {
 }
 
 @Composable
-fun Footer() {
-    // BoxWithConstraints позволяет определить, находимся ли мы в ландшафтном режиме
-    BoxWithConstraints(
+fun AccountFooter() {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
     ) {
         // Фиксируем текущую ориентацию экрана при ее изменении.
-        var orientation by remember { mutableStateOf(Configuration.ORIENTATION_PORTRAIT) }
+        var orientation by remember { androidx.compose.runtime.mutableIntStateOf(Configuration.ORIENTATION_PORTRAIT) }
         val configuration = LocalConfiguration.current
 
         LaunchedEffect(configuration) {
@@ -267,56 +264,75 @@ fun Footer() {
         }
 
         // Расположение текста меняется в зависимости от ориентации экрана.
+        // Альбомная - в одну строку. Портретная - в две строки
         when (orientation) {
             Configuration.ORIENTATION_LANDSCAPE -> {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Политика конфиденциальности", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                    Spacer(Modifier.padding(start = 14.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(3.dp)
-                            .clip(CircleShape)
-                            .background(TextSecondary)
-                    )
-                    Spacer(Modifier.padding(start = 14.dp))
-                    Text("Условия использования", style = MaterialTheme.typography.bodySmall, color = TextSecondary)
-                }
+                AccountFooterContentHorizontal()
             }
             else -> {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Политика конфиденциальности",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center
-                    )
-                    Spacer(Modifier.padding(10.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(3.dp)
-                            .clip(CircleShape)
-                            .background(TextSecondary)
-                    )
-                    Spacer(Modifier.padding(9.dp))
-                    Text(
-                        text = "Условия использования",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = TextSecondary,
-                        textAlign = TextAlign.Center
-                    )
-                }
+                AccountFooterContentVertical()
             }
         }
+    }
+}
+
+@Composable
+fun AccountFooterContentHorizontal() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            "Политика конфиденциальности",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary
+        )
+        Spacer(Modifier.padding(start = 14.dp))
+        Box(
+            modifier = Modifier
+                .size(3.dp)
+                .clip(CircleShape)
+                .background(TextSecondary)
+        )
+        Spacer(Modifier.padding(start = 14.dp))
+        Text("Условия использования",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary
+        )
+    }
+
+}
+
+@Composable
+fun AccountFooterContentVertical() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = "Политика конфиденциальности",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+            textAlign = TextAlign.Center
+        )
+        Spacer(Modifier.padding(10.dp))
+        Box(
+            modifier = Modifier
+                .size(3.dp)
+                .clip(CircleShape)
+                .background(TextSecondary)
+        )
+        Spacer(Modifier.padding(9.dp))
+        Text(
+            text = "Условия использования",
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary,
+            textAlign = TextAlign.Center
+        )
     }
 }
