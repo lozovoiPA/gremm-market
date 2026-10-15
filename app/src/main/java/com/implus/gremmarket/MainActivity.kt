@@ -2,30 +2,37 @@ package com.implus.gremmarket
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.colorResource
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.implus.gremmarket.ui.AccountScreenContent
 import com.implus.gremmarket.ui.AccountScreenScaffold
+import com.implus.gremmarket.ui.AppNavHost
+import com.implus.gremmarket.ui.Destination
 import com.implus.gremmarket.ui.DeviceAppsScreenContent
 import com.implus.gremmarket.ui.DeviceAppsScreenScaffold
 
+val LocalNavigation = staticCompositionLocalOf<NavHostController> { error("Not provided") }
+
+val DeviceAppsLocalNavigation = staticCompositionLocalOf<NavHostController> { error("Not provided") }
 class MainActivity : ComponentActivity(){
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -33,20 +40,59 @@ class MainActivity : ComponentActivity(){
         window.setNavigationBarContrastEnforced(false) // По умолчанию системный навбар будет изменять цвет чтобы контрастировать с экраном. Это приводит к тому, что он не прозрачный. Эта функция убирает автоматический контраст
 
         setContent {
-            //AppNavHost()
+            val navController = rememberNavController();
+            CompositionLocalProvider(
+                LocalNavigation provides navController
+            ) {
+                AppNavHost(
+                    navController
+                )
+            }
             //AccountScreen()
-            DeviceAppsScreen()
+            //DeviceAppsScreen()
+        }
+    }
+}
+
+@Composable
+fun DeviceAppsAppsScreen() {
+    SystemSurface() { modifier ->
+        DeviceAppsScreenScaffold(
+            modifier = modifier
+                .background(Color.Cyan)
+        ) { contentPadding, innerModifier ->
+            DeviceAppsScreenContent(contentPadding, innerModifier)
         }
     }
 }
 
 @Composable
 fun DeviceAppsScreen() {
-    SystemSurface() { modifier ->
-        DeviceAppsScreenScaffold(
-            modifier = modifier
-        ) { contentPadding, innerModifier ->
-            DeviceAppsScreenContent(contentPadding, innerModifier)
+    val navController = rememberNavController()
+
+    CompositionLocalProvider(
+        DeviceAppsLocalNavigation provides navController
+    ) {
+        SystemSurface() { modifier ->
+            DeviceAppsScreenScaffold(
+                modifier = modifier
+            ) { contentPadding, innerModifier ->
+                NavHost(
+                    navController = navController,
+                    route = "device-apps",
+                    startDestination = "device-apps-general"
+                ) {
+                    composable("device-apps-general") {
+                        DeviceAppsScreenContent(contentPadding, innerModifier)
+                    }
+                    composable("device-apps-management") {
+                        DeviceAppsScreenContent(
+                            contentPadding,
+                            innerModifier.background(Color.Cyan)
+                        )
+                    }
+                }
+            }
         }
     }
 }

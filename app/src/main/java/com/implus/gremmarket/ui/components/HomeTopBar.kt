@@ -24,6 +24,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,6 +34,7 @@ fun HomeTopBar (
     colors: TopAppBarColors = TopAppBarDefaults.topAppBarColors(),
     onAccountProfilePictureClick: () -> Unit = {}
 ) {
+    val navController = LocalNavigation.current
     TopAppBar(
         modifier = modifier,
         colors = colors,
@@ -75,7 +77,9 @@ fun HomeTopBar (
                     )
                 }
                 IconButton(
-                    onClick = {},
+                    onClick = {
+                        navController.navigate(route = "account")
+                    },
                     modifier = Modifier
                         .clip(CircleShape)
                 ) {

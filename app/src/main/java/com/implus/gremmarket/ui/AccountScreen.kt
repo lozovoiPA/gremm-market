@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
+import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
 import com.implus.gremmarket.ui.components.TextPrimary
 import com.implus.gremmarket.ui.components.TextSecondary
@@ -178,10 +179,11 @@ data class MenuItemData (
 fun MenuListItem(
     itemData: MenuItemData
 ) {
+    val navController = LocalNavigation.current
     ListItem(
         modifier = Modifier
             .clickable(
-                onClick = {},
+                onClick = { navController.navigate("device-apps") },
                 indication = ripple(color = colorResource(R.color.ClickRippleGreen)), // Анимация зеленого эффекта по нажатию. Судя по докам должна быть по дефолту из М3, но почему-то у меня нет
                 interactionSource = remember { MutableInteractionSource() },
                 role = Role.Button

@@ -49,6 +49,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +63,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.implus.gremmarket.DeviceAppsLocalNavigation
+import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
 import com.implus.gremmarket.ui.components.PlayGreen
 import com.implus.gremmarket.ui.components.TextSecondary
@@ -122,7 +125,7 @@ fun DeviceAppsTopBar(
                 .offset(y = (-5).dp)
         ) {
             DeviceAppsTopBarTabs(
-                modifierInner
+                modifier = modifierInner
             )
             HorizontalDivider(
                 modifier = modifier
@@ -142,6 +145,7 @@ fun DeviceAppsTopBarHeader(
     modifier: Modifier,
     colors: TopAppBarColors
 ) {
+    val navController = LocalNavigation.current
     TopAppBar(
         modifier = modifier,
         colors = colors,
@@ -159,7 +163,7 @@ fun DeviceAppsTopBarHeader(
                     .padding(3.dp)
                     .clip(CircleShape)
                     .clickable(
-                        onClick = {},
+                        onClick = { navController.navigate("home") },
                         indication = ripple(color = colorResource(R.color.ClickRippleGray)),
                         interactionSource = remember { MutableInteractionSource() },
                         role = Role.Button
@@ -181,8 +185,10 @@ fun DeviceAppsTopBarHeader(
 fun DeviceAppsTopBarTabs(
     modifier: Modifier
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    val tabs = listOf("Общие сведения", "Управление")
+    val navController = DeviceAppsLocalNavigation.current
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    val tabs = listOf("device-apps-general", "device-apps-management")
+
     PrimaryScrollableTabRow(
         selectedTab,
         modifier = modifier,
@@ -190,13 +196,16 @@ fun DeviceAppsTopBarTabs(
         contentColor = PlayGreen,
         edgePadding = 0.dp,
         tabs = {
-            tabs.forEachIndexed { index, title ->
+            tabs.forEachIndexed { index, tab ->
                 Tab(
                     selected = selectedTab == index,
-                    onClick = { selectedTab = index },
+                    onClick = {
+                        navController.navigate(tab)
+                        selectedTab = index
+                    },
                     text = {
                         Text(
-                            text = title,
+                            text = tab,
                             fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
                             color = if (selectedTab == index) PlayGreen else TextSecondary
                         )
