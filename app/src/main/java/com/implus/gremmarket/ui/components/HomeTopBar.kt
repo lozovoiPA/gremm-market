@@ -26,6 +26,7 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
+import com.implus.gremmarket.ui.Destination
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -78,7 +79,7 @@ fun HomeTopBar (
                 }
                 IconButton(
                     onClick = {
-                        navController.navigate(route = "account")
+                        navController.navigate(route = Destination.ACCOUNT.route)
                     },
                     modifier = Modifier
                         .clip(CircleShape)

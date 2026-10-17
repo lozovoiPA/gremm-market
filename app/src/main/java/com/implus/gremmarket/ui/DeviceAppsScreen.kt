@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.DevicesOther
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.GridView
@@ -34,8 +33,10 @@ import androidx.compose.material.icons.outlined.PersonPin
 import androidx.compose.material.icons.outlined.ShieldMoon
 import androidx.compose.material.icons.outlined.Stars
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
@@ -46,8 +47,10 @@ import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -55,24 +58,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.currentBackStackEntryAsState
 import com.implus.gremmarket.DeviceAppsLocalNavigation
 import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
 import com.implus.gremmarket.ui.components.PlayGreen
 import com.implus.gremmarket.ui.components.TextSecondary
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun DeviceAppsScreenScaffold(
     modifier: Modifier = Modifier,
-    content: @Composable ((PaddingValues, Modifier) -> Unit) = { paddingValues, modifierInner -> DeviceAppsScreenContent(paddingValues, modifierInner) }
+    content: @Composable ((PaddingValues, Modifier) -> Unit) = { paddingValues, modifierInner -> DeviceAppsGeneralContent(paddingValues, modifierInner) }
 ) {
     Scaffold(
         modifier = modifier
@@ -163,7 +171,7 @@ fun DeviceAppsTopBarHeader(
                     .padding(3.dp)
                     .clip(CircleShape)
                     .clickable(
-                        onClick = { navController.navigate("home") },
+                        onClick = { navController.navigate(Destination.HOME_GAMES.route) },
                         indication = ripple(color = colorResource(R.color.ClickRippleGray)),
                         interactionSource = remember { MutableInteractionSource() },
                         role = Role.Button
@@ -171,9 +179,9 @@ fun DeviceAppsTopBarHeader(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Outlined.ArrowBack,
+                    imageVector = ImageVector.vectorResource(R.drawable.outline_arrow_back_24),
                     contentDescription = null,
-                    tint = Color.Gray,
+                    tint = Color.DarkGray,
                     modifier = Modifier.size(24.dp)
                 )
             }
@@ -186,8 +194,20 @@ fun DeviceAppsTopBarTabs(
     modifier: Modifier
 ) {
     val navController = DeviceAppsLocalNavigation.current
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-    val tabs = listOf("device-apps-general", "device-apps-management")
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+
+
+    var selectedTab by rememberSaveable {
+        mutableIntStateOf(
+            when(currentRoute) {
+                Destination.DEVICEAPPS_GENERAL.route -> 0
+                Destination.DEVICEAPPS_APPS.route -> 1
+                else -> 0
+            }
+        )
+    }
+    val tabs = listOf(Destination.DEVICEAPPS_GENERAL, Destination.DEVICEAPPS_APPS)
 
     PrimaryScrollableTabRow(
         selectedTab,
@@ -200,12 +220,12 @@ fun DeviceAppsTopBarTabs(
                 Tab(
                     selected = selectedTab == index,
                     onClick = {
-                        navController.navigate(tab)
+                        navController.navigate(tab.route)
                         selectedTab = index
                     },
                     text = {
                         Text(
-                            text = tab,
+                            text = tab.label,
                             fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
                             color = if (selectedTab == index) PlayGreen else TextSecondary
                         )
@@ -217,8 +237,63 @@ fun DeviceAppsTopBarTabs(
     )
 }
 
+enum class DeviceAppsManagementLoadingStates(
+
+) {
+    LOADING,
+    NORMAL,
+    APPS_LOADING
+}
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun DeviceAppsScreenContent(
+fun DeviceAppsManagementContent(
+    contentPadding: PaddingValues,
+    modifier: Modifier = Modifier
+) {
+    // Симуляция состояния загрузки
+    var loadingState by remember { mutableStateOf(DeviceAppsManagementLoadingStates.LOADING) }
+
+    LaunchedEffect(Unit) {
+        delay(1000.milliseconds)
+        loadingState = DeviceAppsManagementLoadingStates.NORMAL
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
+            .consumeWindowInsets(contentPadding) // Паддинг выше устанавливается для всех вложенных элементов
+            .windowInsetsPadding( // Учитываем системные треи
+                WindowInsets.safeDrawing.only(
+                    WindowInsetsSides.Horizontal
+                )
+            ),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        when(loadingState) {
+            DeviceAppsManagementLoadingStates.LOADING -> {
+                LoadingIndicator(
+                    color = colorResource(R.color.MarketBlue)
+                )
+            }
+
+            DeviceAppsManagementLoadingStates.NORMAL -> {
+                Text("Content Loaded", color = Color.Black)
+            }
+
+            DeviceAppsManagementLoadingStates.APPS_LOADING -> {
+
+            }
+            else -> {
+
+            }
+        }
+    }
+}
+
+@Composable
+fun DeviceAppsGeneralContent(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {

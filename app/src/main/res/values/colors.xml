@@ -15,4 +15,6 @@
     <color name="ClickRippleGreen">#FF01875F</color>
     <color name="ClickRippleGray">#686868</color>
     <color name="MarketSystemArea">#FF000000</color>
+    <color name="MarketBlue">#FF1255CA</color>
+    <color name="DeviceAppsBottomBarBlue">#FFEFF2F9</color>
 </resources>

@@ -29,8 +29,10 @@ enum class Destination(
     val route: String,
     val label: String
 ) {
+    ROOT("root", ""),
     HOME_GAMES("home-games", "Игры"),
     ACCOUNT("account", "Аккаунт"),
+    DEVICEAPPS("device-apps", ""),
     DEVICEAPPS_GENERAL("device-apps-general", "Общие сведения"),
     DEVICEAPPS_APPS("device-apps-management", "Управление")
 }
@@ -46,14 +48,14 @@ fun AppNavHost(
 
     NavHost(
         navController,
-        route = "main",
-        startDestination = "home"
+        route = Destination.ROOT.route,
+        startDestination = startDestination.route
     ) {
-        composable("home") {
+        composable(Destination.HOME_GAMES.route) {
             HomeScreen()
         }
         composable(
-            route = "account",
+            route = Destination.ACCOUNT.route,
             enterTransition = {
                 slideIntoContainer(
                     towards = AnimatedContentTransitionScope.SlideDirection.Left,
@@ -69,13 +71,18 @@ fun AppNavHost(
         ) {
             AccountScreen()
         }
-        navigation(route = "device-apps", startDestination = "device-apps-general") {
-            composable("device-apps-general") {
+        navigation(route = Destination.DEVICEAPPS.route, startDestination = Destination.DEVICEAPPS_GENERAL.route) {
+            composable(Destination.DEVICEAPPS_GENERAL.route) {
                 DeviceAppsScreen()
             }
-            composable("device-apps-management") {
+            composable(Destination.DEVICEAPPS_APPS.route) {
                 DeviceAppsScreen()
             }
         }
+//        composable(
+//            route = Destination.DEVICEAPPS.route
+//        ) {
+//            DeviceAppsScreen()
+//        }
     }
 }

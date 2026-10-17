@@ -183,7 +183,7 @@ fun MenuListItem(
     ListItem(
         modifier = Modifier
             .clickable(
-                onClick = { navController.navigate("device-apps") },
+                onClick = { navController.navigate(Destination.DEVICEAPPS.route) },
                 indication = ripple(color = colorResource(R.color.ClickRippleGreen)), // Анимация зеленого эффекта по нажатию. Судя по докам должна быть по дефолту из М3, но почему-то у меня нет
                 interactionSource = remember { MutableInteractionSource() },
                 role = Role.Button
