@@ -39,6 +39,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemColors
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -66,10 +67,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
-import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
-import com.implus.gremmarket.ui.components.TextPrimary
-import com.implus.gremmarket.ui.components.TextSecondary
+import com.implus.gremmarket.TextPrimary
+import com.implus.gremmarket.TextSecondary
 
 
 @Composable
@@ -120,7 +120,7 @@ fun AccountScreenContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 MenuGroup(
-                    menuItems = listOf(
+                    menuItemsData = listOf(
                         MenuItemData(Icons.Outlined.GridView, "Управление приложениями и устройством"),
                         MenuItemData(Icons.Outlined.Notifications, "Уведомления и предложения", trailingText = "1"),
                         MenuItemData(Icons.Outlined.Payment, "Платежи и подписки"),
@@ -130,7 +130,7 @@ fun AccountScreenContent(
                     )
                 )
                 MenuGroup (
-                    menuItems = listOf(
+                    menuItemsData = listOf(
                         MenuItemData(icon = Icons.Outlined.ManageAccounts, title = "Персонализация в приложении \"Google Play\""),
                         MenuItemData(icon = Icons.Outlined.Settings, title = "Настройки"),
                         MenuItemData(icon = Icons.Outlined.Help, title = "Справка/отзыв")
@@ -145,10 +145,11 @@ fun AccountScreenContent(
 // Меню в виде карточки (несколько пунктов объединены задним фоном с закругленными углами)
 @Composable
 fun MenuGroup(
-    menuItems: List<MenuItemData>
+    menuItemsData: List<MenuItemData>,
+    modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
         shape = RoundedCornerShape(30.dp),
@@ -157,10 +158,34 @@ fun MenuGroup(
         shadowElevation = 0.dp
     ) {
         Column() {
-            menuItems.forEachIndexed { index, item ->
+            menuItemsData.forEachIndexed { index, item ->
                 MenuListItem(item)
-                if (index < menuItems.lastIndex) {
+                if (index < menuItemsData.lastIndex) {
                     MenuDivider()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MenuGroup(
+    vararg menuListItems: @Composable () -> Unit,
+    modifier: Modifier = Modifier,
+    menuDivider: @Composable () -> Unit = { MenuDivider() }
+) {
+    Surface(
+        modifier = modifier
+            .fillMaxWidth(),
+        color = colorResource(R.color.AccountMenuCardBackground),
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
+    ) {
+        Column() {
+            menuListItems.forEachIndexed { index, item ->
+                item()
+                if (index < menuListItems.lastIndex) {
+                    menuDivider()
                 }
             }
         }
@@ -177,13 +202,15 @@ data class MenuItemData (
 
 @Composable
 fun MenuListItem(
-    itemData: MenuItemData
+    itemData: MenuItemData,
+    modifier: Modifier = Modifier,
+    colors: ListItemColors = ListItemDefaults.colors(containerColor = Color.Transparent),
+    onClick: () -> Unit = {},
 ) {
-    val navController = LocalNavigation.current
     ListItem(
-        modifier = Modifier
+        modifier = modifier
             .clickable(
-                onClick = { navController.navigate(Destination.DEVICEAPPS.route) },
+                onClick = { onClick() },
                 indication = ripple(color = colorResource(R.color.ClickRippleGreen)), // Анимация зеленого эффекта по нажатию. Судя по докам должна быть по дефолту из М3, но почему-то у меня нет
                 interactionSource = remember { MutableInteractionSource() },
                 role = Role.Button
@@ -192,7 +219,6 @@ fun MenuListItem(
             Icon(
                 imageVector = itemData.icon,
                 contentDescription = null,
-                tint = TextPrimary,
                 modifier = Modifier
                     .size(26.dp)
             )
@@ -204,7 +230,6 @@ fun MenuListItem(
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = FontFamily.SansSerif,
                 letterSpacing = 0.em,
-                color = TextPrimary,
                 fontWeight = FontWeight(500),
                 fontSize = 3.7.em,
                 maxLines = 2,
@@ -236,7 +261,7 @@ fun MenuListItem(
             itemData.trailingContent != null -> itemData.trailingContent
             else -> null
         },
-        colors = ListItemDefaults.colors(containerColor = Color.Transparent)
+        colors = colors
     )
 }
 

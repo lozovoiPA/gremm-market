@@ -1,5 +1,8 @@
 package com.implus.gremmarket.ui
 
+import android.content.res.Configuration
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +18,8 @@ import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -23,58 +28,79 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.outlined.DevicesOther
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.PersonPin
+import androidx.compose.material.icons.outlined.PlaylistRemove
 import androidx.compose.material.icons.outlined.ShieldMoon
+import androidx.compose.material.icons.outlined.Smartphone
 import androidx.compose.material.icons.outlined.Stars
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarColors
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.implus.gremmarket.DeviceAppsLocalNavigation
 import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
-import com.implus.gremmarket.ui.components.PlayGreen
-import com.implus.gremmarket.ui.components.TextSecondary
+import com.implus.gremmarket.TextSecondary
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
@@ -213,12 +239,13 @@ fun DeviceAppsTopBarTabs(
         selectedTab,
         modifier = modifier,
         containerColor = Color.White,
-        contentColor = PlayGreen,
+        contentColor = colorResource(R.color.MarketBlue),
         edgePadding = 0.dp,
         tabs = {
             tabs.forEachIndexed { index, tab ->
                 Tab(
                     selected = selectedTab == index,
+                    modifier = Modifier,
                     onClick = {
                         navController.navigate(tab.route)
                         selectedTab = index
@@ -226,67 +253,349 @@ fun DeviceAppsTopBarTabs(
                     text = {
                         Text(
                             text = tab.label,
-                            fontWeight = if (selectedTab == index) FontWeight.Bold else FontWeight.Normal,
-                            color = if (selectedTab == index) PlayGreen else TextSecondary
+                            fontWeight = FontWeight.Normal,
+                            color = if (selectedTab == index) colorResource(R.color.MarketBlue) else TextSecondary
                         )
                     }
                 )
             }
         },
-        divider = {}
+        divider = {},
+        indicator = {
+            TabRowDefaults.PrimaryIndicator(
+                modifier = Modifier
+                    .tabIndicatorOffset(selectedTab, matchContentSize = true)
+                    .offset(y=1.dp),
+                width = Dp.Unspecified,
+                height = 4.dp,
+                color = colorResource(R.color.MarketBlue),
+                shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp)
+            )
+        }
     )
 }
 
-enum class DeviceAppsManagementLoadingStates(
+@Composable
+fun DeviceAppsBottomBar() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(colorResource(R.color.DeviceAppsBottomBarBlue))
+            .height(30.dp)
+    ) {
 
-) {
-    LOADING,
-    NORMAL,
-    APPS_LOADING
+    }
 }
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+
+enum class DeviceAppsManagementLoadingStates() {
+    LOADING,
+    APPS_LOADING,
+    APPS_SHOWN
+}
+
+enum class AppDeviceFilter(
+    val label: String
+) {
+    ON_DEVICE("Это устройство"),
+    NOT_NSTALLED("Не установленные")
+}
+
+enum class AppFilters(
+    val label: String = ""
+) {
+    RECENT_UPDATES("Доступны обновления"),
+    GAMES("Игры"),
+    ARCHIVED("Архивированные")
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceAppsManagementContent(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
-    // Симуляция состояния загрузки
+    // Симуляция состояний загрузки
     var loadingState by remember { mutableStateOf(DeviceAppsManagementLoadingStates.LOADING) }
+    // Это сборный флаг всех возможных фильтров. Контролируют включение/выключение кнопок фильтрации
+    var appDeviceFilter by remember { mutableStateOf(AppDeviceFilter.ON_DEVICE) }
+    // Контролируем состояние нижней шторки фильтров
+    var showBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val scope = rememberCoroutineScope()
 
+    // Симуляция загрузки экрана
     LaunchedEffect(Unit) {
         delay(1000.milliseconds)
-        loadingState = DeviceAppsManagementLoadingStates.NORMAL
+        loadingState = DeviceAppsManagementLoadingStates.APPS_SHOWN
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
-            .consumeWindowInsets(contentPadding) // Паддинг выше устанавливается для всех вложенных элементов
-            .windowInsetsPadding( // Учитываем системные треи
-                WindowInsets.safeDrawing.only(
-                    WindowInsetsSides.Horizontal
+    when(loadingState) {
+        DeviceAppsManagementLoadingStates.LOADING -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
+                    .consumeWindowInsets(contentPadding) // Паддинг выше устанавливается для всех вложенных элементов
+                    .windowInsetsPadding( // Учитываем системные треи
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Horizontal
+                        )
+                    ),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                LoadingIndicator(color = colorResource(R.color.MarketBlue))
+            }
+
+        }
+
+        DeviceAppsManagementLoadingStates.APPS_SHOWN -> {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
+                    .consumeWindowInsets(contentPadding) // Паддинг выше устанавливается для всех вложенных элементов
+                    .windowInsetsPadding( // Учитываем системные треи
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Horizontal
+                        )
+                    )
+            ) {
+                item {
+                    Column(
+                        modifier = modifier
+                            .fillMaxSize()
+                    ) {
+                        AppFiltersChipsRow(
+                            appDeviceFilter,
+                            { showBottomSheet = true }
+                        )
+                        Text("Content Loaded", color = Color.Black)
+                    }
+                }
+            }
+
+            if (showBottomSheet) {
+                AppDeviceFilterBottomSheet(
+                    sheetState = sheetState,
+                    appDeviceFilter = appDeviceFilter,
+                    onClickDeviceFilter = {
+                        if (appDeviceFilter != AppDeviceFilter.ON_DEVICE) appDeviceFilter = AppDeviceFilter.ON_DEVICE
+                        scope.launch {
+                            sheetState.hide()
+                        }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showBottomSheet = false
+                            }
+                        }
+                    },
+                    onClickNotInstalledFilter = {
+                        if (appDeviceFilter != AppDeviceFilter.NOT_NSTALLED) appDeviceFilter = AppDeviceFilter.NOT_NSTALLED
+                        scope.launch {
+                            sheetState.hide()
+                        }.invokeOnCompletion {
+                            if (!sheetState.isVisible) {
+                                showBottomSheet = false
+                            }
+                        }
+                    },
+                    onDismissRequest = { showBottomSheet = false }
                 )
-            ),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            }
+        }
+
+        DeviceAppsManagementLoadingStates.APPS_LOADING -> {
+
+        }
+        else -> {
+
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AppDeviceFilterBottomSheet(
+    sheetState: SheetState,
+    appDeviceFilter: AppDeviceFilter,
+    onClickDeviceFilter: () -> Unit = {},
+    onClickNotInstalledFilter: () -> Unit = {},
+    onDismissRequest: () -> Unit = {}
+) {
+    ModalBottomSheet(
+        onDismissRequest = { onDismissRequest() },
+        sheetState = sheetState,
+
+        // Затемнение экрана
+        scrimColor = Color.Black.copy(alpha = 0.5f),
+        containerColor = colorResource(R.color.MarketBackground),
+        // Убираем дефолтную ручку перетаскивания
+        dragHandle = {},
+        shape = RectangleShape
     ) {
-        when(loadingState) {
-            DeviceAppsManagementLoadingStates.LOADING -> {
-                LoadingIndicator(
-                    color = colorResource(R.color.MarketBlue)
+        // Делаем бар навигации прозрачным (этот модал считается отдельным окном)
+        val view = LocalView.current
+        val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+
+        SideEffect {
+            dialogWindow?.let { window ->
+                window.isNavigationBarContrastEnforced = false
+                window.navigationBarColor = Color.Transparent.toArgb()
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .padding(16.dp)
+                .navigationBarsPadding()
+        ) {
+            Text(
+                "Выберите устройство",
+                style = MaterialTheme.typography.bodyLarge,
+                fontSize = 18.sp,
+                letterSpacing = 0.sp,
+                modifier = Modifier
+                    .padding(bottom = 20.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .padding(vertical = 8.dp, horizontal = 10.dp)
+            ) {
+                val selectedItemColors = ListItemDefaults.colors().copy(
+                    containerColor = colorResource(R.color.FilterChipBlueContainer),
+                    headlineColor = Color.Black,
+                    leadingIconColor = Color.DarkGray
+                )
+                val itemColors = ListItemDefaults.colors().copy(
+                    containerColor = Color.Transparent,
+                    headlineColor = Color.DarkGray,
+                    leadingIconColor = Color.DarkGray
+                )
+
+                MenuGroup(
+                    {
+                        MenuListItem(
+                            MenuItemData(Icons.Outlined.Smartphone, "Это устройство"),
+                            colors = if (appDeviceFilter == AppDeviceFilter.ON_DEVICE) selectedItemColors else itemColors,
+                            onClick = onClickDeviceFilter
+                        )
+                    },
+                    {
+                        MenuListItem(
+                            MenuItemData(Icons.Outlined.PlaylistRemove, "Не установленные"),
+                            colors = if (appDeviceFilter == AppDeviceFilter.NOT_NSTALLED) selectedItemColors else itemColors,
+                            onClick = onClickNotInstalledFilter
+                        )
+                    },
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .border(1.dp, Color.LightGray, shape = RoundedCornerShape(10.dp)),
+                    menuDivider = {
+                        HorizontalDivider(
+                            thickness = 1.dp,
+                            color = Color.LightGray
+                        )
+                    }
                 )
             }
 
-            DeviceAppsManagementLoadingStates.NORMAL -> {
-                Text("Content Loaded", color = Color.Black)
-            }
+        }
+    }
+}
 
-            DeviceAppsManagementLoadingStates.APPS_LOADING -> {
+@Composable
+fun AppFiltersChipsRow(
+    appDeviceFilter: AppDeviceFilter,
+    onAppDeviceFilterChipClick: () -> Unit = {}
+) {
+    var appFiltersStates by remember { mutableIntStateOf(0) }
 
-            }
-            else -> {
+    // определение поворота экрана для удаления дополнительных паддингов чипов при повороте
+    var orientation by remember { mutableIntStateOf(Configuration.ORIENTATION_PORTRAIT) }
+    val configuration = LocalConfiguration.current
 
+    LaunchedEffect(configuration) {
+        snapshotFlow { configuration.orientation }
+            .collect { orientation = it }
+    }
+
+    val filterChipColors = FilterChipDefaults.filterChipColors().copy(
+        selectedContainerColor = colorResource(R.color.FilterChipBlueContainer),
+        selectedLabelColor = colorResource(R.color.FilterChipBlueText),
+        selectedLeadingIconColor = colorResource(R.color.FilterChipBlueText),
+        selectedTrailingIconColor = colorResource(R.color.FilterChipBlueText)
+    )
+    val firstChipModifier = when (orientation) {
+        Configuration.ORIENTATION_LANDSCAPE -> {
+            Modifier
+        }
+        else -> {
+            Modifier.padding(bottom = 16.dp)
+        }
+    }
+
+    LazyRow(
+        modifier = firstChipModifier,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        item {
+            FilterChip(
+                modifier = Modifier
+                    .padding(start = 10.dp), // Мы можем добиться эффекта скролла без обрезки по краям, если паддинг присваивать краевым чипам вместо всего контейнера
+                selected = true,
+                onClick = { onAppDeviceFilterChipClick() },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.Done,
+                        contentDescription = "Localized Description",
+                        modifier = Modifier
+                            .size(15.dp)
+                    )
+                },
+                trailingIcon = {
+                    Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = "",
+                        modifier = Modifier
+                            .size(18.dp),
+                    )
+                },
+                label = { Text(appDeviceFilter.label) },
+                colors = filterChipColors
+            )
+        }
+
+        val appFilters = if (appDeviceFilter == AppDeviceFilter.ON_DEVICE) AppFilters.entries else listOf(AppFilters.GAMES)
+        appFilters.forEachIndexed { index, filter ->
+            item {
+                val filterBitFlag = (1 shl filter.ordinal)
+                val selected = (appFiltersStates and filterBitFlag) != 0 // проверка включен ли фильтр (номер в enum определяет бит флага)
+                val chipModifier =
+                    if (index == AppFilters.entries.lastIndex && orientation == Configuration.ORIENTATION_PORTRAIT)
+                        Modifier.padding(end = 10.dp)
+                    else
+                        Modifier
+
+                FilterChip(
+                    modifier = chipModifier,
+                    selected = selected,
+                    onClick = {
+                        appFiltersStates = appFiltersStates xor filterBitFlag
+                    },
+                    leadingIcon = {
+                        if (selected) {
+                            Icon(
+                                imageVector = Icons.Filled.Done,
+                                contentDescription = "Localized Description",
+                                modifier = Modifier
+                                    .size(15.dp),
+                            )
+                        }
+                        else { null }
+                    },
+                    label = { Text(filter.label) },
+                    colors = filterChipColors
+                )
             }
         }
     }

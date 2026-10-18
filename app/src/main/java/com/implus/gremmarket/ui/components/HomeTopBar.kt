@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -96,9 +95,3 @@ fun HomeTopBar (
         }
     )
 }
-
-val PlayGreen = Color(0xFF01875F)
-val PlayBackground = Color(0xFFF8F9FA)
-val TextPrimary = Color(0xFF1F1F1F)
-val TextSecondary = Color(0xFF5F6368)
-val RatingStarColor = Color(0xFF01875F)

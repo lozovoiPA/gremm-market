@@ -12,7 +12,7 @@ android {
 
     defaultConfig {
         applicationId = "com.implus.gremmarket"
-        minSdk = 24
+        minSdk = 25
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
@@ -38,6 +38,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.compose.material)
     implementation(libs.androidx.runtime)
     implementation(libs.androidx.ui)
     val composeBom = platform("androidx.compose:compose-bom:2026.08.00")

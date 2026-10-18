@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.implus.gremmarket.TextPrimary
+import com.implus.gremmarket.TextSecondary
 
 @Composable
 fun CategoryHeader(title: String) {

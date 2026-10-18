@@ -25,9 +25,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.implus.gremmarket.ui.components.RatingStarColor
-import com.implus.gremmarket.ui.components.TextPrimary
-import com.implus.gremmarket.ui.components.TextSecondary
+import com.implus.gremmarket.RatingStarColor
+import com.implus.gremmarket.TextPrimary
+import com.implus.gremmarket.TextSecondary
 
 @Composable
 fun MediumGameCard(title: String, rating: String) {

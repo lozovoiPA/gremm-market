@@ -1,5 +1,9 @@
 package com.implus.gremmarket
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -12,18 +16,15 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -40,144 +41,14 @@ val LocalNavigation = staticCompositionLocalOf<NavHostController> { error("Not p
 val DeviceAppsLocalNavigation = staticCompositionLocalOf<NavHostController> { error("Not provided") }
 
 class MainActivity : ComponentActivity(){
-    fun getAppTypography(): Typography {
-        val provider = GoogleFont.Provider(
-            providerAuthority = "com.google.android.gms.fonts",
-            providerPackage = "com.google.android.gms",
-            certificates = R.array.com_google_android_gms_fonts_certs
-        )
-
-        val robotoGoogleFont = GoogleFont("Roboto")
-
-        val RobotoFamily = FontFamily(
-            Font(googleFont = robotoGoogleFont, fontProvider = provider, weight = FontWeight.Normal),
-            Font(googleFont = robotoGoogleFont, fontProvider = provider, weight = FontWeight.Bold)
-        )
-
-        val appTypography = Typography(
-
-            // ---------- Display ----------
-            displayLarge = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 57.sp,
-                lineHeight = 64.sp,
-                letterSpacing = (-0.25).sp
-            ),
-            displayMedium = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 45.sp,
-                lineHeight = 52.sp,
-                letterSpacing = 0.sp
-            ),
-            displaySmall = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 36.sp,
-                lineHeight = 44.sp,
-                letterSpacing = 0.sp
-            ),
-
-            // ---------- Headline ----------
-            headlineLarge = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 32.sp,
-                lineHeight = 40.sp,
-                letterSpacing = 0.sp
-            ),
-            headlineMedium = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 28.sp,
-                lineHeight = 36.sp,
-                letterSpacing = 0.sp
-            ),
-            headlineSmall = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 24.sp,
-                lineHeight = 32.sp,
-                letterSpacing = 0.sp
-            ),
-
-            // ---------- Title ----------
-            titleLarge = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 22.sp,
-                lineHeight = 28.sp,
-                letterSpacing = 0.sp
-            ),
-            titleMedium = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                letterSpacing = 0.15.sp
-            ),
-            titleSmall = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.1.sp
-            ),
-
-            // ---------- Body ----------
-            bodyLarge = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 16.sp,
-                lineHeight = 24.sp,
-                letterSpacing = 0.5.sp
-            ),
-            bodyMedium = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.25.sp
-            ),
-            bodySmall = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Normal,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                letterSpacing = 0.4.sp
-            ),
-
-            // ---------- Label ----------
-            labelLarge = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 14.sp,
-                lineHeight = 20.sp,
-                letterSpacing = 0.1.sp
-            ),
-            labelMedium = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 12.sp,
-                lineHeight = 16.sp,
-                letterSpacing = 0.5.sp
-            ),
-            labelSmall = TextStyle(
-                fontFamily = RobotoFamily,
-                fontWeight = FontWeight.Medium,
-                fontSize = 11.sp,
-                lineHeight = 16.sp,
-                letterSpacing = 0.5.sp
-            )
-        )
-        return appTypography;
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge() // Позволяет рисовать от системных треев (сверху, снизу, сбоку)
-        window.setNavigationBarContrastEnforced(false) // По умолчанию системный навбар будет изменять цвет чтобы контрастировать с экраном. Это приводит к тому, что он не прозрачный. Эта функция убирает автоматический контраст
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            window.setNavigationBarContrastEnforced(false)
+        } // По умолчанию системный навбар будет изменять цвет чтобы контрастировать с экраном. Это приводит к тому, что он не прозрачный. Эта функция убирает автоматический контраст
 
         val appTypography = getAppTypography()
         setContent {
@@ -198,8 +69,31 @@ class MainActivity : ComponentActivity(){
     }
 }
 
+// Эта функция нужна для получения текущей активности, а из нее - окна, поскольку на разных экранах разное
+// поведение (цвет) системной панели навигации
+fun Context.findActivity(): Activity? {
+    var context = this
+    while (context is ContextWrapper) {
+        if (context is Activity) return context
+        context = context.baseContext
+    }
+    return null
+}
+
 @Composable
 fun DeviceAppsScreen() {
+    val view = LocalView.current
+    val activity = view.context.findActivity()
+    val window = activity?.window
+
+    val systemNavBarColor = colorResource(R.color.DeviceAppsBottomBarBlue)
+
+    SideEffect {
+        window?.let {
+            it.navigationBarColor = systemNavBarColor.toArgb()
+        }
+    }
+
     val navController = rememberNavController()
 
     CompositionLocalProvider(
@@ -228,6 +122,18 @@ fun DeviceAppsScreen() {
 
 @Composable
 fun AccountScreen() {
+    val view = LocalView.current
+    val activity = view.context.findActivity()
+    val window = activity?.window
+
+    SideEffect {
+        window?.let {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                it.navigationBarColor = Color.Transparent.toArgb()
+            }
+        }
+    }
+
     SystemSurface() { modifier ->
         AccountScreenScaffold(
             modifier = modifier
