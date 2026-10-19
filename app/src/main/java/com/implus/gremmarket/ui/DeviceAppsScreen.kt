@@ -1,6 +1,6 @@
 package com.implus.gremmarket.ui
 
-import android.content.res.Configuration
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,13 +16,16 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -34,6 +37,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Done
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.outlined.DevicesOther
 import androidx.compose.material.icons.outlined.Dns
 import androidx.compose.material.icons.outlined.GridView
@@ -41,13 +45,17 @@ import androidx.compose.material.icons.outlined.PersonPin
 import androidx.compose.material.icons.outlined.PlaylistRemove
 import androidx.compose.material.icons.outlined.ShieldMoon
 import androidx.compose.material.icons.outlined.Smartphone
+import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material.icons.outlined.Stars
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
@@ -73,16 +81,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.colorResource
@@ -91,6 +99,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogWindowProvider
@@ -106,17 +115,22 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun DeviceAppsScreenScaffold(
     modifier: Modifier = Modifier,
-    content: @Composable ((PaddingValues, Modifier) -> Unit) = { paddingValues, modifierInner -> DeviceAppsGeneralContent(paddingValues, modifierInner) }
+    content: @Composable ((PaddingValues, Modifier) -> Unit) =
+        { paddingValues, modifierInner -> DeviceAppsGeneralContent(paddingValues, modifierInner) }
 ) {
     Scaffold(
         modifier = modifier
             .fillMaxSize(),
         containerColor = colorResource(R.color.MarketBackground),
         topBar = {
-            DeviceAppsTopBar(
-                modifier
-                    .offset(y = (-3).dp)
-            )
+            /*
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
+                    .background(Color.White)
+            ) {} */
+            DeviceAppsTopBar(modifier)
         }
     ) {
         contentPadding ->
@@ -148,7 +162,6 @@ fun DeviceAppsTopBar(
 
     Column(
         modifier = Modifier
-            .padding(bottom = 10.dp)
     ) {
         DeviceAppsTopBarHeader(
             modifierInner,
@@ -156,7 +169,7 @@ fun DeviceAppsTopBar(
         )
         Column(
             modifier = Modifier
-                .offset(y = (-5).dp)
+                .offset(y = (-10).dp)
         ) {
             DeviceAppsTopBarTabs(
                 modifier = modifierInner
@@ -275,18 +288,6 @@ fun DeviceAppsTopBarTabs(
     )
 }
 
-@Composable
-fun DeviceAppsBottomBar() {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(colorResource(R.color.DeviceAppsBottomBarBlue))
-            .height(30.dp)
-    ) {
-
-    }
-}
-
 enum class DeviceAppsManagementLoadingStates() {
     LOADING,
     APPS_LOADING,
@@ -297,7 +298,7 @@ enum class AppDeviceFilter(
     val label: String
 ) {
     ON_DEVICE("Это устройство"),
-    NOT_NSTALLED("Не установленные")
+    NOT_INSTALLED("Не установленные")
 }
 
 enum class AppFilters(
@@ -307,6 +308,44 @@ enum class AppFilters(
     GAMES("Игры"),
     ARCHIVED("Архивированные")
 }
+
+data class AppInfo(
+    val name: String,
+    val size: String,
+    val icon: String,
+    val game: Boolean = false,
+    val installed: Boolean = false,
+    val selected: Boolean = false,
+    val progress: Int = 0,
+    val iconBgColor: Color = Color.White
+)
+
+val sampleApps = listOf(
+    AppInfo("1.1.1.1 Three Letters", "14 МБ", "🌐"),
+    AppInfo("3.14ГИС: карты, навигатор, мат.анализ", "141 МБ", "🗺️"),
+    AppInfo("AddClean for Your Browser", "7,5 МБ", "🛡️"),
+    AppInfo("Adowas Photohop Sketch", "71 МБ", "🖌️"),
+    AppInfo("OTK Arena", "424 МБ", "🌄", true),
+    AppInfo("EarthDroid: файлы и управление папками", "54 МБ", "📡"),
+    AppInfo("EarthMirror: контроль и поддержка приложений", "42 МБ", "🪞"),
+    AppInfo("Alzheimer NPV", "64 МБ", "🔒"),
+    AppInfo("Barkadium - Космический шутер", "48,6 МБ", "👾", true),
+    AppInfo("Bunbun Cakery", "62 МБ", "🧁", true),
+    AppInfo("BRICKSITY - Sandbox&Multiplayer game", "338 МБ", "🧩", true),
+    AppInfo("YellowDust0.12 - Full Burst RPG", "279 МБ", "🎭", true),
+    AppInfo("Bulew Monstaw", "120 МБ", "🐲", true),
+    AppInfo("Bus IN: Припаркуй автобус", "105 МБ", "🚌", true),
+    AppInfo("Candy Sweet Legend", "79 МБ", "🍬", true),
+    AppInfo("Cats Residence: Игра про котиков", "327 МБ", "🐱", true),
+    AppInfo("Chess.omw - Do you miss playing chess?", "102 МБ", "♟️", true),
+    AppInfo("Grem Chrome", "2,9 ГБ", "🌐", installed = true),
+    AppInfo("Grem Презентации", "253 МБ", "🟨", installed = true),
+    AppInfo("Grmail", "236 МБ", "✉️", installed = true),
+    AppInfo("Resource 4 Photo Widget", "57 МБ", "🟢", installed = true),
+    AppInfo("Мяундекс Клавиатура с Алиной", "398 МБ", "Мяу", installed = true),
+    AppInfo("Лед NPV", "107 МБ", "🔥", installed = true),
+    AppInfo("Y (Ранее Wtiwwer)", "1,91 ГБ", "Y", installed = true)
+)
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -349,9 +388,9 @@ fun DeviceAppsManagementContent(
 
         }
 
-        DeviceAppsManagementLoadingStates.APPS_SHOWN -> {
+        else -> {
             LazyColumn(
-                modifier = Modifier
+                modifier = modifier
                     .fillMaxSize()
                     .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
                     .consumeWindowInsets(contentPadding) // Паддинг выше устанавливается для всех вложенных элементов
@@ -361,18 +400,43 @@ fun DeviceAppsManagementContent(
                         )
                     )
             ) {
-                item {
+                stickyHeader {
                     Column(
-                        modifier = modifier
-                            .fillMaxSize()
+                        modifier = Modifier
+                            .background(Color.White)
                     ) {
                         AppFiltersChipsRow(
                             appDeviceFilter,
-                            { showBottomSheet = true }
+                            { showBottomSheet = true },
+                            Modifier
+                                .padding(vertical = 5.dp)
                         )
-                        Text("Content Loaded", color = Color.Black)
+                        AppListTitle(
+                            appDeviceFilter,
+                            Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .padding(start = 10.dp)
+                                .padding(top = 15.dp)
+                        )
                     }
                 }
+                item {
+                    Column(
+                        modifier = Modifier
+                            .padding(10.dp)
+                    ) {
+                        sampleApps.forEach { app ->
+                            AppRow(
+                                app = app, checked = app.selected,
+                                onChecked = { },
+                                progress = 0
+                            )
+                        }
+                    }
+                }
+
+
             }
 
             if (showBottomSheet) {
@@ -390,7 +454,7 @@ fun DeviceAppsManagementContent(
                         }
                     },
                     onClickNotInstalledFilter = {
-                        if (appDeviceFilter != AppDeviceFilter.NOT_NSTALLED) appDeviceFilter = AppDeviceFilter.NOT_NSTALLED
+                        if (appDeviceFilter != AppDeviceFilter.NOT_INSTALLED) appDeviceFilter = AppDeviceFilter.NOT_INSTALLED
                         scope.launch {
                             sheetState.hide()
                         }.invokeOnCompletion {
@@ -403,12 +467,103 @@ fun DeviceAppsManagementContent(
                 )
             }
         }
+    }
+}
 
-        DeviceAppsManagementLoadingStates.APPS_LOADING -> {
-
+@Composable
+private fun AppRow(
+    app: AppInfo,
+    checked: Boolean,
+    onChecked: (Boolean) -> Unit,
+    progress: Int = 0
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 46.dp)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            Modifier
+                .size(42.dp)
+                .dropShadow(
+                    shape = RoundedCornerShape(14.dp),
+                    shadow = Shadow(
+                        radius = 2.dp,
+                        spread = 0.dp,
+                        color = Color.LightGray,
+                        offset = DpOffset(x = (-1).dp, 2.dp)
+                    )
+                )
+                .background(color = app.iconBgColor, shape = RoundedCornerShape(14.dp)),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(app.icon, fontSize = 21.sp)
         }
-        else -> {
 
+        Spacer(Modifier.width(9.dp))
+        Column(Modifier.weight(1f)) {
+            Text(app.name, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (progress > 0) {
+                Spacer(Modifier.height(2.dp))
+                LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth().height(3.dp))
+                Text("$progress% из ${app.size}", fontSize = 9.sp)
+            } else {
+                Text("${app.size}  •  Обновлено ${if (app.installed) "вчера" else "2 дня назад"}", fontSize = 9.sp, maxLines = 1)
+            }
+        }
+        Icon(Icons.Default.ExpandMore, null, modifier = Modifier.size(20.dp))
+        Checkbox(
+            checked = checked, onCheckedChange = onChecked,
+            modifier = Modifier.size(34.dp), colors = CheckboxDefaults.colors()
+        )
+    }
+}
+
+@Composable
+fun AppListTitle(
+    appDeviceFilter: AppDeviceFilter,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            if (appDeviceFilter == AppDeviceFilter.ON_DEVICE) "Игры и приложения" else "Приложения",
+            color = Color.Black,
+            modifier = Modifier
+                .fillMaxWidth(0.4f),
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.titleLarge,
+            maxLines = 1,
+            fontSize = 18.sp
+        )
+        Row(
+            modifier = Modifier
+                .requiredWidth(200.dp)
+                .fillMaxHeight()
+                .clickable(
+                    onClick = { },
+                    indication = ripple(color = colorResource(R.color.ClickRippleGray)), // Анимация зеленого эффекта по нажатию. Судя по докам должна быть по дефолту из М3, но почему-то у меня нет
+                    interactionSource = remember { MutableInteractionSource() },
+                    role = Role.Button
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                "Недавно обновленные",
+                style = MaterialTheme.typography.labelLarge
+            )
+            Spacer(Modifier.width(7.dp))
+            Icon(
+                imageVector = Icons.Outlined.Sort,
+                contentDescription = null,
+                modifier = Modifier
+            )
         }
     }
 }
@@ -439,7 +594,9 @@ fun AppDeviceFilterBottomSheet(
 
         SideEffect {
             dialogWindow?.let { window ->
-                window.isNavigationBarContrastEnforced = false
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    window.isNavigationBarContrastEnforced = false
+                }
                 window.navigationBarColor = Color.Transparent.toArgb()
             }
         }
@@ -483,7 +640,7 @@ fun AppDeviceFilterBottomSheet(
                     {
                         MenuListItem(
                             MenuItemData(Icons.Outlined.PlaylistRemove, "Не установленные"),
-                            colors = if (appDeviceFilter == AppDeviceFilter.NOT_NSTALLED) selectedItemColors else itemColors,
+                            colors = if (appDeviceFilter == AppDeviceFilter.NOT_INSTALLED) selectedItemColors else itemColors,
                             onClick = onClickNotInstalledFilter
                         )
                     },
@@ -506,18 +663,10 @@ fun AppDeviceFilterBottomSheet(
 @Composable
 fun AppFiltersChipsRow(
     appDeviceFilter: AppDeviceFilter,
-    onAppDeviceFilterChipClick: () -> Unit = {}
+    onAppDeviceFilterChipClick: () -> Unit = {},
+    modifier: Modifier = Modifier
 ) {
     var appFiltersStates by remember { mutableIntStateOf(0) }
-
-    // определение поворота экрана для удаления дополнительных паддингов чипов при повороте
-    var orientation by remember { mutableIntStateOf(Configuration.ORIENTATION_PORTRAIT) }
-    val configuration = LocalConfiguration.current
-
-    LaunchedEffect(configuration) {
-        snapshotFlow { configuration.orientation }
-            .collect { orientation = it }
-    }
 
     val filterChipColors = FilterChipDefaults.filterChipColors().copy(
         selectedContainerColor = colorResource(R.color.FilterChipBlueContainer),
@@ -525,29 +674,21 @@ fun AppFiltersChipsRow(
         selectedLeadingIconColor = colorResource(R.color.FilterChipBlueText),
         selectedTrailingIconColor = colorResource(R.color.FilterChipBlueText)
     )
-    val firstChipModifier = when (orientation) {
-        Configuration.ORIENTATION_LANDSCAPE -> {
-            Modifier
-        }
-        else -> {
-            Modifier.padding(bottom = 16.dp)
-        }
-    }
 
     LazyRow(
-        modifier = firstChipModifier,
+        modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
             FilterChip(
                 modifier = Modifier
-                    .padding(start = 10.dp), // Мы можем добиться эффекта скролла без обрезки по краям, если паддинг присваивать краевым чипам вместо всего контейнера
+                    .padding(start = 10.dp),
                 selected = true,
                 onClick = { onAppDeviceFilterChipClick() },
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.Done,
-                        contentDescription = "Localized Description",
+                        contentDescription = null,
                         modifier = Modifier
                             .size(15.dp)
                     )
@@ -555,9 +696,9 @@ fun AppFiltersChipsRow(
                 trailingIcon = {
                     Icon(
                         imageVector = Icons.Filled.ArrowDropDown,
-                        contentDescription = "",
+                        contentDescription = null,
                         modifier = Modifier
-                            .size(18.dp),
+                            .size(20.dp),
                     )
                 },
                 label = { Text(appDeviceFilter.label) },
@@ -571,7 +712,7 @@ fun AppFiltersChipsRow(
                 val filterBitFlag = (1 shl filter.ordinal)
                 val selected = (appFiltersStates and filterBitFlag) != 0 // проверка включен ли фильтр (номер в enum определяет бит флага)
                 val chipModifier =
-                    if (index == AppFilters.entries.lastIndex && orientation == Configuration.ORIENTATION_PORTRAIT)
+                    if (index == AppFilters.entries.lastIndex)
                         Modifier.padding(end = 10.dp)
                     else
                         Modifier
@@ -586,7 +727,7 @@ fun AppFiltersChipsRow(
                         if (selected) {
                             Icon(
                                 imageVector = Icons.Filled.Done,
-                                contentDescription = "Localized Description",
+                                contentDescription = null,
                                 modifier = Modifier
                                     .size(15.dp),
                             )
@@ -606,7 +747,7 @@ fun DeviceAppsGeneralContent(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
-    LazyColumn(
+    Column(
         modifier = Modifier // Модификатор для паддинга с учетом TopBar, BottomBar, и системных треев.
             .fillMaxSize()
             .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
@@ -618,90 +759,88 @@ fun DeviceAppsGeneralContent(
             )
     )
     {
-        item {
-            Column( // Вложенная колонка позволяет скроллить по паддингу (СМ. альбомную ориентацию), в то время как просто LazyColumn не дает этого эффекта.
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 14.dp)
-            ) {
-                RowMenuItem(
-                    MenuItemData(
-                        icon = Icons.Outlined.ShieldMoon,
-                        "Вредоносные приложения не найдены",
-                        "Проверка выполнена вчера"
-                    )
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(horizontal = 14.dp)
+        ) {
+            RowMenuItem(
+                MenuItemData(
+                    icon = Icons.Outlined.ShieldMoon,
+                    "Вредоносные приложения не найдены",
+                    "Проверка выполнена вчера"
                 )
-                RowMenuItem(
-                    MenuItemData(
-                        icon = Icons.Outlined.GridView,
-                        "Доступны обновления",
-                        "6 обновлений ожидают скачивания.",
-                        trailingContent = {
-                            Row(
+            )
+            RowMenuItem(
+                MenuItemData(
+                    icon = Icons.Outlined.GridView,
+                    "Доступны обновления",
+                    "6 обновлений ожидают скачивания.",
+                    trailingContent = {
+                        Row(
+                            modifier = Modifier
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = "Обновить все",
                                 modifier = Modifier
-                                    .padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Text(
-                                    text = "Обновить все",
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(30.dp))
-                                        .clickable(
-                                            onClick = {},
-                                            indication = ripple(color = colorResource(R.color.ClickRippleGreen)),
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            role = Role.Button
-                                        )
-                                        .padding(vertical = 12.dp),
-                                    color = colorResource(R.color.ClickRippleGreen),
-                                    fontWeight = FontWeight.SemiBold
-                                )
+                                    .clip(RoundedCornerShape(30.dp))
+                                    .clickable(
+                                        onClick = {},
+                                        indication = ripple(color = colorResource(R.color.ClickRippleGreen)),
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        role = Role.Button
+                                    )
+                                    .padding(vertical = 12.dp),
+                                color = colorResource(R.color.ClickRippleGreen),
+                                fontWeight = FontWeight.SemiBold
+                            )
 
-                                Text(
-                                    text = "Подробнее",
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(30.dp))
-                                        .clickable(
-                                            onClick = {},
-                                            indication = ripple(color = colorResource(R.color.ClickRippleGreen)),
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            role = Role.Button
-                                        )
-                                        .padding(vertical = 12.dp),
-                                    color = colorResource(R.color.ClickRippleGreen),
-                                    fontWeight = FontWeight.SemiBold
-                                )
-                            }
+                            Text(
+                                text = "Подробнее",
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(30.dp))
+                                    .clickable(
+                                        onClick = {},
+                                        indication = ripple(color = colorResource(R.color.ClickRippleGreen)),
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        role = Role.Button
+                                    )
+                                    .padding(vertical = 12.dp),
+                                color = colorResource(R.color.ClickRippleGreen),
+                                fontWeight = FontWeight.SemiBold
+                            )
                         }
-                    )
+                    }
                 )
-                RowMenuItem(
-                    MenuItemData(
-                        icon = Icons.Outlined.Dns,
-                        "71 ГБ из 115 ГБ"
-                    )
+            )
+            RowMenuItem(
+                MenuItemData(
+                    icon = Icons.Outlined.Dns,
+                    "71 ГБ из 115 ГБ"
                 )
-                RowMenuItem(
-                    MenuItemData(
-                        icon = Icons.Outlined.DevicesOther,
-                        "Синхронизация приложений с устройствами",
-                        "Синхронизированных устройств нет."
-                    )
+            )
+            RowMenuItem(
+                MenuItemData(
+                    icon = Icons.Outlined.DevicesOther,
+                    "Синхронизация приложений с устройствами",
+                    "Синхронизированных устройств нет."
                 )
-                RowMenuItem(
-                    MenuItemData(
-                        icon = Icons.Outlined.Stars,
-                        "Оценки и отзывы"
-                    )
+            )
+            RowMenuItem(
+                MenuItemData(
+                    icon = Icons.Outlined.Stars,
+                    "Оценки и отзывы"
                 )
-                RowMenuItem(
-                    MenuItemData(
-                        icon = Icons.Outlined.PersonPin,
-                        "Ваши впечатления"
-                    )
+            )
+            RowMenuItem(
+                MenuItemData(
+                    icon = Icons.Outlined.PersonPin,
+                    "Ваши впечатления"
                 )
-            }
+            )
         }
     }
 }
