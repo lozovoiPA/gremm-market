@@ -1,6 +1,14 @@
-package com.implus.gremmarket.ui
+package com.implus.gremmarket.ui.deviceapps
 
 import android.os.Build
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,16 +24,13 @@ import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.calculateEndPadding
 import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,25 +42,23 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.DevicesOther
 import androidx.compose.material.icons.outlined.Dns
+import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.PersonPin
 import androidx.compose.material.icons.outlined.PlaylistRemove
 import androidx.compose.material.icons.outlined.ShieldMoon
 import androidx.compose.material.icons.outlined.Smartphone
-import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material.icons.outlined.Stars
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +75,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -81,13 +85,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
-import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.Layout
@@ -99,7 +102,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogWindowProvider
@@ -108,7 +110,14 @@ import com.implus.gremmarket.DeviceAppsLocalNavigation
 import com.implus.gremmarket.LocalNavigation
 import com.implus.gremmarket.R
 import com.implus.gremmarket.TextSecondary
+import com.implus.gremmarket.ui.Destination
+import com.implus.gremmarket.ui.MenuGroup
+import com.implus.gremmarket.ui.MenuItemData
+import com.implus.gremmarket.ui.MenuListItem
+import com.implus.gremmarket.ui.deviceapps.applist.AppListTitle
+import com.implus.gremmarket.ui.deviceapps.applist.AppRow
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -118,31 +127,40 @@ fun DeviceAppsScreenScaffold(
     content: @Composable ((PaddingValues, Modifier) -> Unit) =
         { paddingValues, modifierInner -> DeviceAppsGeneralContent(paddingValues, modifierInner) }
 ) {
-    Scaffold(
-        modifier = modifier
-            .fillMaxSize(),
-        containerColor = colorResource(R.color.MarketBackground),
-        topBar = {
-            /*
+    val viewState = remember { DeviceAppsViewState() }
+
+    CompositionLocalProvider(LocalDeviceAppsState provides viewState) {
+        Scaffold(
+            modifier = modifier
+                .fillMaxSize(),
+            containerColor = colorResource(R.color.MarketBackground),
+            topBar = {
+                /*
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(WindowInsets.safeDrawing.asPaddingValues().calculateTopPadding())
                     .background(Color.White)
             ) {} */
-            DeviceAppsTopBar(modifier)
+                if (viewState.isAnyAppSelected) {
+                    DeviceAppsSelectionManagementTopBar()
+                } else {
+                    DeviceAppsTopBar(modifier)
+                }
+
+            }
+        ) { contentPadding ->
+            val innerPadding = WindowInsets.safeDrawing.asPaddingValues()
+                .calculateEndPadding(LocalLayoutDirection.current)
+
+            val modifierInner = modifier
+                .padding(
+                    start = innerPadding,
+                    end = innerPadding
+                )
+
+            content(contentPadding, modifierInner)
         }
-    ) {
-        contentPadding ->
-        val innerPadding = WindowInsets.safeDrawing.asPaddingValues().calculateEndPadding(LocalLayoutDirection.current)
-
-        val modifierInner = modifier
-            .padding(
-                start = innerPadding,
-                end = innerPadding
-            )
-
-        content(contentPadding, modifierInner)
     }
 }
 
@@ -160,15 +178,13 @@ fun DeviceAppsTopBar(
         containerColor = colorResource(R.color.MarketBackground)
     )
 
-    Column(
-        modifier = Modifier
-    ) {
+
+    Column(modifier = Modifier) {
         DeviceAppsTopBarHeader(
             modifierInner,
             topBarColors
         )
-        Column(
-            modifier = Modifier
+        Column(modifier = Modifier
                 .offset(y = (-10).dp)
         ) {
             DeviceAppsTopBarTabs(
@@ -182,7 +198,91 @@ fun DeviceAppsTopBar(
                 color = Color.LightGray
             )
         }
+    }
+}
 
+@Composable
+fun DeviceAppsSelectionManagementTopBar() {
+    val viewState = LocalDeviceAppsState.current
+    val titleText = when (val selectedAppsCount = viewState.selectedApps.size) {
+        1 -> "Выделено 1 приложение"
+        2,3,4 -> "Выделено $selectedAppsCount приложения"
+        else -> "Выделено $selectedAppsCount приложений"
+    }
+
+    val colors = TopAppBarDefaults.topAppBarColors().copy(
+        containerColor = colorResource(R.color.MarketBackground)
+    )
+
+    Column(modifier = Modifier) {
+        TopAppBar(
+            colors = colors,
+            title = {
+                Text(
+                    text = titleText,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            },
+            navigationIcon = {
+                ActionIcon(
+                    onClick = { viewState.clearSelection() },
+                    icon = Icons.Outlined.Close
+                )
+            },
+            actions = {
+                Row() {
+                    if(viewState.appDeviceFilter == AppDeviceFilter.NOT_INSTALLED) {
+                        ActionIcon(
+                            onClick = {
+                                viewState.startDownload(sampleApps)
+                            },
+                            icon = Icons.Outlined.Download
+                        )
+                    }
+                    ActionIcon(
+                        onClick = { },
+                        icon = Icons.Outlined.Delete
+                    )
+                }
+            }
+        )
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(0.dp),
+            thickness = 1.dp,
+            color = Color.LightGray
+        )
+    }
+}
+
+@Composable
+fun ActionIcon(
+    onClick: () -> Unit = {},
+    icon: ImageVector,
+    modifier: Modifier = Modifier
+        .size(48.dp)
+        .padding(3.dp)
+        .clip(CircleShape)
+        .clickable(
+            onClick = { onClick() },
+            indication = null/* ripple(color = colorResource(R.color.ClickRippleGray)) */,
+            interactionSource = remember { MutableInteractionSource() },
+            role = Role.Button
+        ),
+    iconModifier: Modifier = Modifier
+        .size(24.dp)
+) {
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = iconModifier
+        )
     }
 }
 
@@ -204,26 +304,10 @@ fun DeviceAppsTopBarHeader(
             )
         },
         navigationIcon = {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .padding(3.dp)
-                    .clip(CircleShape)
-                    .clickable(
-                        onClick = { navController.navigate(Destination.HOME_GAMES.route) },
-                        indication = ripple(color = colorResource(R.color.ClickRippleGray)),
-                        interactionSource = remember { MutableInteractionSource() },
-                        role = Role.Button
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = ImageVector.vectorResource(R.drawable.outline_arrow_back_24),
-                    contentDescription = null,
-                    tint = Color.DarkGray,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+            ActionIcon(
+                onClick = { navController.navigate(Destination.HOME_GAMES.route) },
+                icon = ImageVector.vectorResource(R.drawable.outline_arrow_back_24)
+            )
         }
     )
 }
@@ -287,88 +371,64 @@ fun DeviceAppsTopBarTabs(
         }
     )
 }
-
-enum class DeviceAppsManagementLoadingStates() {
-    LOADING,
-    APPS_LOADING,
-    APPS_SHOWN
-}
-
-enum class AppDeviceFilter(
-    val label: String
-) {
-    ON_DEVICE("Это устройство"),
-    NOT_INSTALLED("Не установленные")
-}
-
-enum class AppFilters(
-    val label: String = ""
-) {
-    RECENT_UPDATES("Доступны обновления"),
-    GAMES("Игры"),
-    ARCHIVED("Архивированные")
-}
-
-data class AppInfo(
-    val name: String,
-    val size: String,
-    val icon: String,
-    val game: Boolean = false,
-    val installed: Boolean = false,
-    val selected: Boolean = false,
-    val progress: Int = 0,
-    val iconBgColor: Color = Color.White
-)
-
-val sampleApps = listOf(
-    AppInfo("1.1.1.1 Three Letters", "14 МБ", "🌐"),
-    AppInfo("3.14ГИС: карты, навигатор, мат.анализ", "141 МБ", "🗺️"),
-    AppInfo("AddClean for Your Browser", "7,5 МБ", "🛡️"),
-    AppInfo("Adowas Photohop Sketch", "71 МБ", "🖌️"),
-    AppInfo("OTK Arena", "424 МБ", "🌄", true),
-    AppInfo("EarthDroid: файлы и управление папками", "54 МБ", "📡"),
-    AppInfo("EarthMirror: контроль и поддержка приложений", "42 МБ", "🪞"),
-    AppInfo("Alzheimer NPV", "64 МБ", "🔒"),
-    AppInfo("Barkadium - Космический шутер", "48,6 МБ", "👾", true),
-    AppInfo("Bunbun Cakery", "62 МБ", "🧁", true),
-    AppInfo("BRICKSITY - Sandbox&Multiplayer game", "338 МБ", "🧩", true),
-    AppInfo("YellowDust0.12 - Full Burst RPG", "279 МБ", "🎭", true),
-    AppInfo("Bulew Monstaw", "120 МБ", "🐲", true),
-    AppInfo("Bus IN: Припаркуй автобус", "105 МБ", "🚌", true),
-    AppInfo("Candy Sweet Legend", "79 МБ", "🍬", true),
-    AppInfo("Cats Residence: Игра про котиков", "327 МБ", "🐱", true),
-    AppInfo("Chess.omw - Do you miss playing chess?", "102 МБ", "♟️", true),
-    AppInfo("Grem Chrome", "2,9 ГБ", "🌐", installed = true),
-    AppInfo("Grem Презентации", "253 МБ", "🟨", installed = true),
-    AppInfo("Grmail", "236 МБ", "✉️", installed = true),
-    AppInfo("Resource 4 Photo Widget", "57 МБ", "🟢", installed = true),
-    AppInfo("Мяундекс Клавиатура с Алиной", "398 МБ", "Мяу", installed = true),
-    AppInfo("Лед NPV", "107 МБ", "🔥", installed = true),
-    AppInfo("Y (Ранее Wtiwwer)", "1,91 ГБ", "Y", installed = true)
-)
-
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun DeviceAppsManagementContent(
     contentPadding: PaddingValues,
     modifier: Modifier = Modifier
 ) {
+    val viewState = LocalDeviceAppsState.current
+
+    /*
     // Симуляция состояний загрузки
     var loadingState by remember { mutableStateOf(DeviceAppsManagementLoadingStates.LOADING) }
     // Это сборный флаг всех возможных фильтров. Контролируют включение/выключение кнопок фильтрации
     var appDeviceFilter by remember { mutableStateOf(AppDeviceFilter.ON_DEVICE) }
     // Контролируем состояние нижней шторки фильтров
     var showBottomSheet by remember { mutableStateOf(false) }
+     */
     val sheetState = rememberModalBottomSheetState()
+
+    // попытки повторить анимацию фейда + слайда (последовательного) из гп
+    // конечно как всегда нативно есть только одновременно, но нет последовательно......
+    var fadeState = remember { MutableTransitionState(!viewState.isAnyAppSelected) }
+    var slideState = remember { MutableTransitionState(false) }
+
+    var fadeFirst by remember { mutableStateOf(true) }
+
+    LaunchedEffect(viewState.isAnyAppSelected) {
+        if (fadeFirst) {
+            fadeState.targetState = !viewState.isAnyAppSelected
+        } else {
+            slideState.targetState = !viewState.isAnyAppSelected
+        }
+    }
+
+    LaunchedEffect(slideState) {
+        snapshotFlow { slideState.isIdle }
+            .filter { it }
+            .collect {
+                fadeState.targetState = slideState.currentState
+            }
+        fadeFirst != fadeFirst
+    }
+    LaunchedEffect(fadeState) {
+        snapshotFlow { fadeState.isIdle }
+            .filter { it }
+            .collect {
+                slideState.targetState = fadeState.currentState
+            }
+        fadeFirst != fadeFirst
+    }
     val scope = rememberCoroutineScope()
 
     // Симуляция загрузки экрана
     LaunchedEffect(Unit) {
         delay(1000.milliseconds)
-        loadingState = DeviceAppsManagementLoadingStates.APPS_SHOWN
+        viewState.loadingState = DeviceAppsManagementLoadingStates.APPS_SHOWN
     }
 
-    when(loadingState) {
+    when(viewState.loadingState) {
         DeviceAppsManagementLoadingStates.LOADING -> {
             Column(
                 modifier = Modifier
@@ -389,7 +449,7 @@ fun DeviceAppsManagementContent(
         }
 
         else -> {
-            LazyColumn(
+            Column(
                 modifier = modifier
                     .fillMaxSize()
                     .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
@@ -400,170 +460,107 @@ fun DeviceAppsManagementContent(
                         )
                     )
             ) {
-                stickyHeader {
+                AnimatedVisibility(
+                    visible = !viewState.isAnyAppSelected,
+                    enter = slideInVertically() + expandVertically(),
+                    exit = slideOutVertically() + shrinkVertically()
+                ) {
                     Column(
                         modifier = Modifier
                             .background(Color.White)
                     ) {
-                        AppFiltersChipsRow(
-                            appDeviceFilter,
-                            { showBottomSheet = true },
-                            Modifier
-                                .padding(vertical = 5.dp)
-                        )
-                        AppListTitle(
-                            appDeviceFilter,
-                            Modifier
-                                .fillMaxWidth()
-                                .height(50.dp)
-                                .padding(start = 10.dp)
-                                .padding(top = 15.dp)
-                        )
-                    }
-                }
-                item {
-                    Column(
-                        modifier = Modifier
-                            .padding(10.dp)
-                    ) {
-                        sampleApps.forEach { app ->
-                            AppRow(
-                                app = app, checked = app.selected,
-                                onChecked = { },
-                                progress = 0
-                            )
+                        AnimatedVisibility(
+                            visible = !viewState.isAnyAppSelected,
+                            enter = fadeIn(),
+                            exit = fadeOut()
+                        ) {
+                            Column() {
+                                AppFiltersChipsRow(
+                                    viewState.appDeviceFilter,
+                                    { viewState.showBottomSheet = true },
+                                    Modifier
+                                        .padding(vertical = 5.dp)
+                                )
+                                AppListTitle(
+                                    viewState.appDeviceFilter,
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp)
+                                        .padding(start = 10.dp)
+                                        .padding(top = 15.dp)
+                                )
+                            }
                         }
                     }
                 }
 
+                LazyColumn(
+                    /*modifier = modifier
+                        .fillMaxSize()
+                        .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
+                        .consumeWindowInsets(contentPadding) // Паддинг выше устанавливается для всех вложенных элементов
+                        .windowInsetsPadding( // Учитываем системные треи
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Horizontal
+                            )
+                        )*/
+                    modifier = Modifier
+                        .offset(y = 5.dp)
+                ) {
+                    stickyHeader {
+
+                    }
+
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .padding(top = 10.dp)
+                                .padding(start = 4.dp)
+                        ) {
+                            sampleApps.forEach { app ->
+                                val appIndex = sampleApps.indexOf(app)
+                                AppRow(
+                                    app = app, checked = appIndex in viewState.selectedApps,
+                                    onChecked = { viewState.toggleSelection(appIndex) },
+                                    viewState = viewState
+                                )
+                            }
+                        }
+                    }
+
+
+                }
 
             }
 
-            if (showBottomSheet) {
+
+            if (viewState.showBottomSheet) {
                 AppDeviceFilterBottomSheet(
                     sheetState = sheetState,
-                    appDeviceFilter = appDeviceFilter,
+                    appDeviceFilter = viewState.appDeviceFilter,
                     onClickDeviceFilter = {
-                        if (appDeviceFilter != AppDeviceFilter.ON_DEVICE) appDeviceFilter = AppDeviceFilter.ON_DEVICE
+                        if (viewState.appDeviceFilter != AppDeviceFilter.ON_DEVICE) viewState.appDeviceFilter = AppDeviceFilter.ON_DEVICE
                         scope.launch {
                             sheetState.hide()
                         }.invokeOnCompletion {
                             if (!sheetState.isVisible) {
-                                showBottomSheet = false
+                                viewState.showBottomSheet = false
                             }
                         }
                     },
                     onClickNotInstalledFilter = {
-                        if (appDeviceFilter != AppDeviceFilter.NOT_INSTALLED) appDeviceFilter = AppDeviceFilter.NOT_INSTALLED
+                        if (viewState.appDeviceFilter != AppDeviceFilter.NOT_INSTALLED) viewState.appDeviceFilter = AppDeviceFilter.NOT_INSTALLED
                         scope.launch {
                             sheetState.hide()
                         }.invokeOnCompletion {
                             if (!sheetState.isVisible) {
-                                showBottomSheet = false
+                                viewState.showBottomSheet = false
                             }
                         }
                     },
-                    onDismissRequest = { showBottomSheet = false }
+                    onDismissRequest = { viewState.showBottomSheet = false }
                 )
             }
-        }
-    }
-}
-
-@Composable
-private fun AppRow(
-    app: AppInfo,
-    checked: Boolean,
-    onChecked: (Boolean) -> Unit,
-    progress: Int = 0
-) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 46.dp)
-            .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Box(
-            Modifier
-                .size(42.dp)
-                .dropShadow(
-                    shape = RoundedCornerShape(14.dp),
-                    shadow = Shadow(
-                        radius = 2.dp,
-                        spread = 0.dp,
-                        color = Color.LightGray,
-                        offset = DpOffset(x = (-1).dp, 2.dp)
-                    )
-                )
-                .background(color = app.iconBgColor, shape = RoundedCornerShape(14.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(app.icon, fontSize = 21.sp)
-        }
-
-        Spacer(Modifier.width(9.dp))
-        Column(Modifier.weight(1f)) {
-            Text(app.name, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            if (progress > 0) {
-                Spacer(Modifier.height(2.dp))
-                LinearProgressIndicator(progress = { progress / 100f }, modifier = Modifier.fillMaxWidth().height(3.dp))
-                Text("$progress% из ${app.size}", fontSize = 9.sp)
-            } else {
-                Text("${app.size}  •  Обновлено ${if (app.installed) "вчера" else "2 дня назад"}", fontSize = 9.sp, maxLines = 1)
-            }
-        }
-        Icon(Icons.Default.ExpandMore, null, modifier = Modifier.size(20.dp))
-        Checkbox(
-            checked = checked, onCheckedChange = onChecked,
-            modifier = Modifier.size(34.dp), colors = CheckboxDefaults.colors()
-        )
-    }
-}
-
-@Composable
-fun AppListTitle(
-    appDeviceFilter: AppDeviceFilter,
-    modifier: Modifier = Modifier
-) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            if (appDeviceFilter == AppDeviceFilter.ON_DEVICE) "Игры и приложения" else "Приложения",
-            color = Color.Black,
-            modifier = Modifier
-                .fillMaxWidth(0.4f),
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.titleLarge,
-            maxLines = 1,
-            fontSize = 18.sp
-        )
-        Row(
-            modifier = Modifier
-                .requiredWidth(200.dp)
-                .fillMaxHeight()
-                .clickable(
-                    onClick = { },
-                    indication = ripple(color = colorResource(R.color.ClickRippleGray)), // Анимация зеленого эффекта по нажатию. Судя по докам должна быть по дефолту из М3, но почему-то у меня нет
-                    interactionSource = remember { MutableInteractionSource() },
-                    role = Role.Button
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                "Недавно обновленные",
-                style = MaterialTheme.typography.labelLarge
-            )
-            Spacer(Modifier.width(7.dp))
-            Icon(
-                imageVector = Icons.Outlined.Sort,
-                contentDescription = null,
-                modifier = Modifier
-            )
         }
     }
 }
@@ -619,7 +616,7 @@ fun AppDeviceFilterBottomSheet(
                     .padding(vertical = 8.dp, horizontal = 10.dp)
             ) {
                 val selectedItemColors = ListItemDefaults.colors().copy(
-                    containerColor = colorResource(R.color.FilterChipBlueContainer),
+                    containerColor = colorResource(R.color.MarketAccentBlue),
                     headlineColor = Color.Black,
                     leadingIconColor = Color.DarkGray
                 )
@@ -632,14 +629,20 @@ fun AppDeviceFilterBottomSheet(
                 MenuGroup(
                     {
                         MenuListItem(
-                            MenuItemData(Icons.Outlined.Smartphone, "Это устройство"),
+                            MenuItemData(
+                                Icons.Outlined.Smartphone,
+                                "Это устройство"
+                            ),
                             colors = if (appDeviceFilter == AppDeviceFilter.ON_DEVICE) selectedItemColors else itemColors,
                             onClick = onClickDeviceFilter
                         )
                     },
                     {
                         MenuListItem(
-                            MenuItemData(Icons.Outlined.PlaylistRemove, "Не установленные"),
+                            MenuItemData(
+                                Icons.Outlined.PlaylistRemove,
+                                "Не установленные"
+                            ),
                             colors = if (appDeviceFilter == AppDeviceFilter.NOT_INSTALLED) selectedItemColors else itemColors,
                             onClick = onClickNotInstalledFilter
                         )
@@ -669,7 +672,7 @@ fun AppFiltersChipsRow(
     var appFiltersStates by remember { mutableIntStateOf(0) }
 
     val filterChipColors = FilterChipDefaults.filterChipColors().copy(
-        selectedContainerColor = colorResource(R.color.FilterChipBlueContainer),
+        selectedContainerColor = colorResource(R.color.MarketAccentBlue),
         selectedLabelColor = colorResource(R.color.FilterChipBlueText),
         selectedLeadingIconColor = colorResource(R.color.FilterChipBlueText),
         selectedTrailingIconColor = colorResource(R.color.FilterChipBlueText)

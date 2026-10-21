@@ -136,14 +136,14 @@ fun getAppTypography(): Typography {
             fontWeight = FontWeight.Medium,
             fontSize = 12.sp,
             lineHeight = 16.sp,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.sp
         ),
         labelSmall = TextStyle(
             fontFamily = appFontFamily,
             fontWeight = FontWeight.Medium,
             fontSize = 11.sp,
             lineHeight = 16.sp,
-            letterSpacing = 0.5.sp
+            letterSpacing = 0.sp
         )
     )
     return appTypography

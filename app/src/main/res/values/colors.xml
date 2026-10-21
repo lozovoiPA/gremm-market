@@ -17,6 +17,7 @@
     <color name="MarketSystemArea">#FF000000</color>
     <color name="MarketBlue">#FF1255CA</color>
     <color name="DeviceAppsBottomBarBlue">#FFEFF2F9</color>
-    <color name="FilterChipBlueContainer">#FFC3E7FF</color>
+    <color name="MarketAccentBlue">#FFC3E7FF</color>
     <color name="FilterChipBlueText">#FF004976</color>
+    <color name="Shadow">#FFDDDDDD</color>
 </resources>

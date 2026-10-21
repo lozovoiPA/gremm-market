@@ -10,6 +10,7 @@ kotlin = "2.4.20"
 runtime = "1.12.1"
 ui = "1.12.1"
 composeMaterial = "1.7.1"
+uiGraphics = "1.12.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -23,6 +24,7 @@ androidx-runtime = { group = "androidx.compose.runtime", name = "runtime", versi
 material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui", version.ref = "ui" }
 androidx-compose-material = { group = "androidx.wear.compose", name = "compose-material", version.ref = "composeMaterial" }
+androidx-compose-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics", version.ref = "uiGraphics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
