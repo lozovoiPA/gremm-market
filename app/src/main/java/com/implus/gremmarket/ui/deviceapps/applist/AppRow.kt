@@ -8,6 +8,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,14 +24,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Badge
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.CircularWavyProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,12 +46,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.implus.gremmarket.R
 import com.implus.gremmarket.TextSecondary
+import com.implus.gremmarket.ui.components.ActionIcon
 import com.implus.gremmarket.ui.deviceapps.AppDeviceFilter
 import com.implus.gremmarket.ui.deviceapps.AppInfo
 import com.implus.gremmarket.ui.deviceapps.DeviceAppsViewState
@@ -85,6 +90,7 @@ fun AppRow(
         Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp)
+            .padding(start = 4.dp)
             .heightIn(min=60.dp)
             .clip(RoundedCornerShape(topStart = 10.dp, bottomStart = 10.dp))
             .background(if (checked) colorResource(R.color.AccountBackground) else Color.Transparent),
@@ -135,10 +141,12 @@ fun AppRow(
                     DownloadState.INSTALLING -> "Установка..."
                     else -> "Подождите..."
                 }
+                Spacer(modifier = Modifier.height(4.dp))
                 Badge(
                     containerColor = colorResource(R.color.DeviceAppsBottomBarBlue)
                 ) {
-                    Text(text = badgeText)
+                    Text(text = badgeText, style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp))
                 }
             } else {
                 Spacer(modifier = Modifier.height(6.dp))
@@ -162,23 +170,49 @@ fun AppRow(
             }
 
         }
-        Spacer(modifier = Modifier.width(15.dp))
-        Icon(
-            Icons.Default.ExpandMore,
-            null,
-            modifier = Modifier.size(22.dp))
-        Spacer(modifier = Modifier.width(20.dp))
-        Checkbox(
-            checked = checked,
-            onCheckedChange = onChecked,
-            modifier = Modifier
-                .size(34.dp),
-            colors = CheckboxDefaults.colors().copy(
-                checkedBoxColor = colorResource(R.color.MarketBlue),
-                checkedBorderColor = colorResource(R.color.MarketBlue)
+        if (downloadState == null) {
+            Spacer(modifier = Modifier.width(15.dp))
+            ActionIcon(
+                icon = Icons.Default.ExpandMore,
+                modifier = Modifier
+                    .size(22.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        onClick = { },
+                        indication = ripple(color = colorResource(R.color.ClickRippleGray)),
+                        interactionSource = remember { MutableInteractionSource() },
+                        role = Role.Button
+                    )
             )
-        )
-        Spacer(modifier = Modifier.width(20.dp))
+            Spacer(modifier = Modifier.width(20.dp))
+            Checkbox(
+                checked = checked,
+                onCheckedChange = onChecked,
+                modifier = Modifier
+                    .size(34.dp),
+                colors = CheckboxDefaults.colors().copy(
+                    checkedBoxColor = colorResource(R.color.MarketBlue),
+                    checkedBorderColor = colorResource(R.color.MarketBlue)
+                )
+            )
+            Spacer(modifier = Modifier.width(20.dp))
+        } else {
+
+            ActionIcon(
+                icon = Icons.Default.Close,
+                modifier = Modifier
+                    .size(30.dp)
+                    .clip(CircleShape)
+                    .clickable(
+                        onClick = { },
+                        indication = ripple(color = colorResource(R.color.ClickRippleGray)),
+                        interactionSource = remember { MutableInteractionSource() },
+                        role = Role.Button
+                    )
+            )
+            Spacer(modifier = Modifier.width(22.dp))
+
+        }
     }
 }
 

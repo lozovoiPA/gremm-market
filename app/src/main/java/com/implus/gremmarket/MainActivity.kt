@@ -33,9 +33,9 @@ import com.implus.gremmarket.ui.AccountScreenContent
 import com.implus.gremmarket.ui.AccountScreenScaffold
 import com.implus.gremmarket.ui.AppNavHost
 import com.implus.gremmarket.ui.Destination
-import com.implus.gremmarket.ui.deviceapps.DeviceAppsGeneralContent
-import com.implus.gremmarket.ui.deviceapps.DeviceAppsManagementContent
 import com.implus.gremmarket.ui.deviceapps.DeviceAppsScreenScaffold
+import com.implus.gremmarket.ui.deviceapps.content.DeviceAppsGeneralContent
+import com.implus.gremmarket.ui.deviceapps.content.DeviceAppsManagementContent
 
 val LocalNavigation = staticCompositionLocalOf<NavHostController> { error("Not provided") }
 val DeviceAppsLocalNavigation = staticCompositionLocalOf<NavHostController> { error("Not provided") }

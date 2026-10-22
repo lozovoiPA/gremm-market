@@ -2,6 +2,7 @@ package com.implus.gremmarket.ui.deviceapps
 
 import android.util.Log
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -24,31 +25,72 @@ enum class AppDeviceFilter(
     val label: String
 ) {
     ON_DEVICE("Это устройство"),
-    NOT_INSTALLED("Не установленные")
+    NOT_INSTALLED("Не установленные");
+
+    fun toggle(): AppDeviceFilter {
+        return if (this != ON_DEVICE) ON_DEVICE else NOT_INSTALLED
+    }
 }
 
 enum class AppFilters(
-    val label: String = ""
+    val label: String = "",
 ) {
-    RECENT_UPDATES("Доступны обновления"),
+    HAS_UPDATES("Доступны обновления"),
     GAMES("Игры"),
-    ARCHIVED("Архивированные")
+    ARCHIVED("Архивированные");
+
+    val flagBit: Int
+        get() = (1 shl this.ordinal)
 }
 
+fun AppInfo.appliesTo(filter: AppFilters): Boolean {
+    when(filter) {
+        AppFilters.GAMES -> if (!this.game) return false
+        AppFilters.HAS_UPDATES -> if(this.lastUpdated.isNotEmpty()) return false
+        AppFilters.ARCHIVED -> return false
+    }
+    return true
+}
+
+fun AppInfo.appliesTo(deviceFilter: AppDeviceFilter): Boolean {
+    when(deviceFilter) {
+        AppDeviceFilter.ON_DEVICE -> if (!this.installed) return false
+        AppDeviceFilter.NOT_INSTALLED -> if (this.installed) return false
+    }
+    return true
+}
+
+fun AppInfo.appliesTo(flags: Int): Boolean {
+    AppFilters.entries.forEach { x ->
+        if (flags.isFilterToggled(x) && !this.appliesTo(x)) return false
+    }
+    return true
+}
+
+fun Int.isFilterToggled(flag: AppFilters): Boolean {
+    return ((this and flag.flagBit) != 0)
+}
+
+fun Int.toggleFilter(flag: AppFilters): Int {
+    return (this xor flag.flagBit)
+}
 
 class DeviceAppsViewState {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     // Симуляция состояний загрузки
     var loadingState by mutableStateOf(DeviceAppsManagementLoadingStates.LOADING)
-    // Это сборный флаг всех возможных фильтров. Контролируют включение/выключение кнопок фильтрации
+    // Это флаги фильтров. Контролируют включение/выключение кнопок фильтрации
     var appDeviceFilter by mutableStateOf(AppDeviceFilter.ON_DEVICE)
+    var appFilters by mutableIntStateOf(0)
     // Контролируем состояние нижней шторки фильтров
     var showBottomSheet by mutableStateOf(false)
 
     var selectedApps by mutableStateOf(setOf<Int>())
         private set
     var activeDownloads by mutableStateOf<Map<Int, DownloadProgress>>(emptyMap())
+        private set
+    var shownApps by mutableStateOf<List<AppInfo>>(emptyList())
         private set
 
     val isAnyAppSelected: Boolean
@@ -60,6 +102,29 @@ class DeviceAppsViewState {
         } else {
             selectedApps + appId
         }
+    }
+    // по установлено/неустановлено и по общему флагу
+    fun queryShownAppsByFilter(appDeviceFilter: AppDeviceFilter, appFilters: Int) {
+        shownApps = emptyList()
+        Log.d("GREM", "Filtering apps by filters: ${appDeviceFilter.label}")
+        if(appFilters == 0) {
+            shownApps = shownApps + sampleApps.filter { app -> app.appliesTo(appDeviceFilter) }
+        } else {
+            AppFilters.entries.forEach { x ->
+                if (appFilters.isFilterToggled(x)) {
+                    shownApps = shownApps + sampleApps.filter { app ->
+                        app.appliesTo(x) && app.appliesTo(appDeviceFilter)
+                    }
+                    Log.d("GREM", x.label)
+                }
+            }
+        }
+        shownApps = shownApps.toSet().toList()
+    }
+
+    fun toggleAppDeviceFilter() {
+        appDeviceFilter = appDeviceFilter.toggle()
+        queryShownAppsByFilter(appDeviceFilter, appFilters)
     }
 
     fun startDownload(apps: List<AppInfo>) {
@@ -77,8 +142,10 @@ class DeviceAppsViewState {
     private suspend fun simulateAppDownload(appId: Int, totalBytes: Long) {
         var currentProgress = .0f
         var currentState = DownloadState.RETRIEVAL
+        val app = sampleApps[appId]
+
         while (currentState != DownloadState.FINISHED) {
-            Log.d("GREM", "App \"${sampleApps[appId].name}\" $currentState simulating with progress of $currentProgress")
+            Log.d("GREM", "App \"${app.name}\" $currentState simulating with progress of $currentProgress")
 
 
             delay(currentState.getRandomDownloadValue().milliseconds)
@@ -105,6 +172,10 @@ class DeviceAppsViewState {
 
         delay(500.milliseconds)
         activeDownloads = activeDownloads - appId
+        app.installed = true
+        if(!(app.appliesTo(appFilters) && app.appliesTo(appDeviceFilter)) && app in shownApps) {
+            shownApps = shownApps - app
+        }
     }
 
     fun clearSelection() {
@@ -126,7 +197,8 @@ enum class DownloadState(
     RETRIEVAL("retrieval"),
     DOWNLOAD("download"),
     INSTALLING("installing"),
-    FINISHED("finished");
+    FINISHED("finished"),
+    STOPPED("stopped");
 
     fun advanceState(): DownloadState {
         when(this) {
@@ -162,10 +234,10 @@ data class AppInfo(
     val size: String,
     val icon: String,
     val game: Boolean = false,
-    val installed: Boolean = false,
+    var installed: Boolean = false,
     val iconBgColor: Color = Color.White,
     val sizeBytes: Long = 10_000_000L,
-    val lastUpdated: String = ""
+    var lastUpdated: String = ""
 )
 
 val sampleApps = listOf(
