@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -44,10 +45,10 @@ import androidx.compose.ui.unit.dp
 import com.implus.gremmarket.R
 import com.implus.gremmarket.ui.deviceapps.DeviceAppsManagementLoadingStates
 import com.implus.gremmarket.ui.deviceapps.LocalDeviceAppsState
-import com.implus.gremmarket.ui.deviceapps.appliesTo
 import com.implus.gremmarket.ui.deviceapps.applist.AppFiltersChipsRow
 import com.implus.gremmarket.ui.deviceapps.applist.AppListTitle
 import com.implus.gremmarket.ui.deviceapps.applist.AppRow
+import com.implus.gremmarket.ui.deviceapps.applist.AppSampleRow
 import com.implus.gremmarket.ui.deviceapps.sampleApps
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
@@ -77,6 +78,8 @@ fun DeviceAppsManagementContent(
     var slideState = remember { MutableTransitionState(false) }
 
     var fadeFirst by remember { mutableStateOf(true) }
+
+    val scope = rememberCoroutineScope()
 
     LaunchedEffect(viewState.isAnyAppSelected) {
         if (fadeFirst) {
@@ -130,7 +133,7 @@ fun DeviceAppsManagementContent(
 
         }
 
-        else -> {
+        DeviceAppsManagementLoadingStates.APPS_SHOWN -> {
             Column(
                 modifier = modifier
                     .fillMaxSize()
@@ -195,17 +198,16 @@ fun DeviceAppsManagementContent(
                     item {
                         Spacer(modifier = Modifier.height(10.dp))
                     }
-                    shownApps.forEach { app ->
+                    sampleApps.forEach { app ->
                         val appIndex = sampleApps.indexOf(app)
-                        val visible = app.appliesTo(viewState.appFilters) && app.appliesTo(viewState.appDeviceFilter)
+                        val visible = app in shownApps
                         item {
                             Log.d("GREM", "Отображать?: $visible")
                             AnimatedVisibility(
-                                visible = app.appliesTo(viewState.appFilters) && app.appliesTo(viewState.appDeviceFilter),
-                                enter = fadeIn() + slideInVertically() + expandVertically(),
-                                exit = fadeOut() + slideOutVertically() + shrinkVertically()
+                                visible = visible,
+                                enter = fadeIn(),
+                                exit = fadeOut()
                             ) {
-
                                 AppRow(
                                     app = app, checked = appIndex in viewState.selectedApps,
                                     onChecked = { viewState.toggleSelection(appIndex) },
@@ -230,6 +232,50 @@ fun DeviceAppsManagementContent(
 
                 }
 
+            }
+        }
+        DeviceAppsManagementLoadingStates.APPS_LOADING -> {
+            Log.d("GREM", "Apps are loading, samples should be shown")
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(contentPadding) // Внешний паддинг вычисляемый скаффолдом - учитывает его TopBar и BottomBar
+                    .consumeWindowInsets(contentPadding) // Паддинг выше устанавливается для всех вложенных элементов
+                    .windowInsetsPadding( // Учитываем системные треи
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Horizontal
+                        )
+                    )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .background(Color.White)
+                ) {
+                    Column() {
+                        AppFiltersChipsRow(
+                            viewState,
+                            { viewState.showBottomSheet = true },
+                            Modifier
+                                .padding(vertical = 5.dp)
+                        )
+                        AppListTitle(
+                            viewState.appDeviceFilter,
+                            Modifier
+                                .fillMaxWidth()
+                                .height(50.dp)
+                                .padding(start = 10.dp)
+                                .padding(top = 15.dp)
+                        )
+                    }
+                }
+
+                Column(modifier = Modifier.offset(y = 5.dp)) {
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    for (i in 0..10) {
+                        AppSampleRow()
+                    }
+                }
             }
         }
     }

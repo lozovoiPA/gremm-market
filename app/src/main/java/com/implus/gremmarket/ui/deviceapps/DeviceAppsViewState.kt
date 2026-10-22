@@ -7,11 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
-import kotlinx.coroutines.CoroutineScope
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -75,8 +77,9 @@ fun Int.toggleFilter(flag: AppFilters): Int {
     return (this xor flag.flagBit)
 }
 
-class DeviceAppsViewState {
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+class DeviceAppsViewState: ViewModel() {
+    //private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    //private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     // Симуляция состояний загрузки
     var loadingState by mutableStateOf(DeviceAppsManagementLoadingStates.LOADING)
@@ -103,28 +106,67 @@ class DeviceAppsViewState {
             selectedApps + appId
         }
     }
-    // по установлено/неустановлено и по общему флагу
-    fun queryShownAppsByFilter(appDeviceFilter: AppDeviceFilter, appFilters: Int) {
-        shownApps = emptyList()
-        Log.d("GREM", "Filtering apps by filters: ${appDeviceFilter.label}")
-        if(appFilters == 0) {
-            shownApps = shownApps + sampleApps.filter { app -> app.appliesTo(appDeviceFilter) }
-        } else {
-            AppFilters.entries.forEach { x ->
-                if (appFilters.isFilterToggled(x)) {
-                    shownApps = shownApps + sampleApps.filter { app ->
-                        app.appliesTo(x) && app.appliesTo(appDeviceFilter)
+
+    fun queryShownAppsByFilter() {
+        queryShownAppsByFilter(appDeviceFilter, appFilters)
+    }
+
+    suspend fun queryShownAppsByFilterWithNoStateChange() {
+        try {
+            val filteredApps = withContext(Dispatchers.Default) {
+                if (appFilters == 0) {
+                    sampleApps.filter { app ->
+                        app.appliesTo(appDeviceFilter)
                     }
-                    Log.d("GREM", x.label)
+                } else {
+                    AppFilters.entries
+                        .filter { filter ->
+                            appFilters.isFilterToggled(filter)
+                        }
+                        .flatMap { filter ->
+                            sampleApps.filter { app ->
+                                app.appliesTo(filter) &&
+                                        app.appliesTo(appDeviceFilter)
+                            }
+                        }
+                        .distinct()
                 }
             }
+            shownApps = filteredApps
+
+        } finally {
+            Log.d("GREM", "Filtering finished")
         }
-        shownApps = shownApps.toSet().toList()
+    }
+
+    // по установлено/неустановлено и по общему флагу
+    fun queryShownAppsByFilter(appDeviceFilter: AppDeviceFilter, appFilters: Int) {
+        viewModelScope.launch {
+            try {
+                if(loadingState != DeviceAppsManagementLoadingStates.LOADING) {
+                    loadingState = DeviceAppsManagementLoadingStates.APPS_LOADING
+                    yield()
+                }
+
+                val filteredApps = withContext(Dispatchers.Default) {
+                        sampleApps.filter { app ->
+                            app.appliesTo(appFilters) && app.appliesTo(appDeviceFilter)
+                        }
+                            .distinct()
+                }
+                shownApps = filteredApps
+
+            } finally {
+                if(loadingState == DeviceAppsManagementLoadingStates.APPS_LOADING)
+                    loadingState = DeviceAppsManagementLoadingStates.APPS_SHOWN
+                Log.d("GREM", "Filtering finished")
+            }
+        }
     }
 
     fun toggleAppDeviceFilter() {
         appDeviceFilter = appDeviceFilter.toggle()
-        queryShownAppsByFilter(appDeviceFilter, appFilters)
+        //queryShownAppsByFilter(appDeviceFilter, appFilters)
     }
 
     fun startDownload(apps: List<AppInfo>) {
@@ -132,7 +174,7 @@ class DeviceAppsViewState {
             val app = apps[appIndex]
             activeDownloads = activeDownloads + (appIndex to DownloadProgress())
 
-            scope.launch {
+            viewModelScope.launch {
                 simulateAppDownload(appIndex, app.sizeBytes)
             }
         }
@@ -170,9 +212,10 @@ class DeviceAppsViewState {
             }
         }
 
-        delay(500.milliseconds)
+        delay(1000.milliseconds)
         activeDownloads = activeDownloads - appId
         app.installed = true
+
         if(!(app.appliesTo(appFilters) && app.appliesTo(appDeviceFilter)) && app in shownApps) {
             shownApps = shownApps - app
         }
@@ -210,22 +253,22 @@ enum class DownloadState(
         return RETRIEVAL
     }
     fun getRandomDownloadValue(): Long {
-        when(this) {
+        val res: Long = when(this) {
             RETRIEVAL -> Random.nextLong(400, 800)
             DOWNLOAD -> Random.nextLong(1000, 1600)
             INSTALLING -> Random.nextLong(400, 800)
             else -> Random.nextLong(400, 1200)
         }
-        return Random.nextLong(400, 1200)
+        return res
     }
     fun getRandomDownloadChunk(): Float {
-        when(this) {
+        val res: Float = when(this) {
             RETRIEVAL -> Random.nextFloat() * 0.25f + 0.05f
             DOWNLOAD -> Random.nextFloat() * 0.05f + 0.05f
             INSTALLING -> Random.nextFloat() * 0.25f + 0.05f
             else -> Random.nextFloat() * 0.05f + 0.05f
         }
-        return Random.nextFloat() * 0.05f + 0.05f
+        return res
     }
 }
 

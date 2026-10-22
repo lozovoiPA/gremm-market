@@ -12,7 +12,6 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
@@ -30,10 +29,6 @@ fun AppFiltersChipsRow(
     modifier: Modifier = Modifier
 ) {
     val appDeviceFilter = viewState.appDeviceFilter
-
-    LaunchedEffect(viewState.appFilters) {
-        viewState.queryShownAppsByFilter(appDeviceFilter = appDeviceFilter, appFilters = viewState.appFilters)
-    }
 
     val filterChipColors = FilterChipDefaults.filterChipColors().copy(
         selectedContainerColor = colorResource(R.color.MarketAccentBlue),

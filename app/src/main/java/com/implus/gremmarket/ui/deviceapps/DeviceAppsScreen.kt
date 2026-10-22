@@ -59,6 +59,10 @@ fun DeviceAppsScreenScaffold(
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 
+    LaunchedEffect(viewState.appFilters, viewState.appDeviceFilter) {
+        viewState.queryShownAppsByFilter()
+    }
+
     CompositionLocalProvider(LocalDeviceAppsState provides viewState) {
         Scaffold(
             modifier = modifier
@@ -98,14 +102,15 @@ fun DeviceAppsScreenScaffold(
                     appDeviceFilter = viewState.appDeviceFilter,
                     onClickDeviceFilter = {
                         if (viewState.appDeviceFilter != AppDeviceFilter.ON_DEVICE) {
-                            viewState.toggleAppDeviceFilter()
                             hideBottomSheet(scope, sheetState, viewState)
+                            viewState.toggleAppDeviceFilter()
+
                         }
                     },
                     onClickNotInstalledFilter = {
                         if (viewState.appDeviceFilter != AppDeviceFilter.NOT_INSTALLED) {
-                            viewState.toggleAppDeviceFilter()
                             hideBottomSheet(scope, sheetState, viewState)
+                            viewState.toggleAppDeviceFilter()
                         }
                     },
                     onDismissRequest = { viewState.showBottomSheet = false },
