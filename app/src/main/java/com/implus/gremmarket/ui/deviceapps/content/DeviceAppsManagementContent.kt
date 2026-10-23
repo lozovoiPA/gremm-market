@@ -49,7 +49,6 @@ import com.implus.gremmarket.ui.deviceapps.applist.AppFiltersChipsRow
 import com.implus.gremmarket.ui.deviceapps.applist.AppListTitle
 import com.implus.gremmarket.ui.deviceapps.applist.AppRow
 import com.implus.gremmarket.ui.deviceapps.applist.AppSampleRow
-import com.implus.gremmarket.ui.deviceapps.sampleApps
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlin.time.Duration.Companion.milliseconds
@@ -198,9 +197,8 @@ fun DeviceAppsManagementContent(
                     item {
                         Spacer(modifier = Modifier.height(10.dp))
                     }
-                    sampleApps.forEach { app ->
-                        val appIndex = sampleApps.indexOf(app)
-                        val visible = app in shownApps
+                    viewState.apps.forEachIndexed { appIndex, app ->
+                        val visible = appIndex in shownApps
                         item {
                             Log.d("GREM", "Отображать?: $visible")
                             AnimatedVisibility(
@@ -209,6 +207,7 @@ fun DeviceAppsManagementContent(
                                 exit = fadeOut()
                             ) {
                                 AppRow(
+                                    appId = appIndex,
                                     app = app, checked = appIndex in viewState.selectedApps,
                                     onChecked = { viewState.toggleSelection(appIndex) },
                                     viewState = viewState

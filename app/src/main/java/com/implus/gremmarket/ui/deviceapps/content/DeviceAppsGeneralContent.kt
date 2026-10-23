@@ -34,7 +34,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.implus.gremmarket.R
-import com.implus.gremmarket.ui.MenuItemData
+import com.implus.gremmarket.ui.components.MenuItemData
 import com.implus.gremmarket.ui.deviceapps.RowMenuItem
 
 @Composable

@@ -29,10 +29,10 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.implus.gremmarket.ui.AccountScreenContent
-import com.implus.gremmarket.ui.AccountScreenScaffold
 import com.implus.gremmarket.ui.AppNavHost
 import com.implus.gremmarket.ui.Destination
+import com.implus.gremmarket.ui.account.AccountScreenContent
+import com.implus.gremmarket.ui.account.AccountScreenScaffold
 import com.implus.gremmarket.ui.deviceapps.DeviceAppsScreenScaffold
 import com.implus.gremmarket.ui.deviceapps.content.DeviceAppsGeneralContent
 import com.implus.gremmarket.ui.deviceapps.content.DeviceAppsManagementContent

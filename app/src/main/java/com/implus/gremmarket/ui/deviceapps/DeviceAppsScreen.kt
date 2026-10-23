@@ -32,15 +32,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.implus.gremmarket.GremApplication
 import com.implus.gremmarket.R
 import com.implus.gremmarket.TextSecondary
-import com.implus.gremmarket.ui.MenuItemData
+import com.implus.gremmarket.ui.components.MenuItemData
 import com.implus.gremmarket.ui.deviceapps.content.AppDeviceFilterBottomSheet
 import com.implus.gremmarket.ui.deviceapps.content.DeviceAppsGeneralContent
 import com.implus.gremmarket.ui.deviceapps.topbar.DeviceAppsSelectionManagementTopBar
@@ -55,7 +58,10 @@ fun DeviceAppsScreenScaffold(
     content: @Composable ((PaddingValues, Modifier) -> Unit) =
         { paddingValues, modifierInner -> DeviceAppsGeneralContent(paddingValues, modifierInner) }
 ) {
-    val viewState = remember { DeviceAppsViewState() }
+    // ViewModel берет приложения и загрузки из репозитория уровня приложения,
+    // поэтому они сохраняются при уходе с экрана
+    val application = LocalContext.current.applicationContext as GremApplication
+    val viewState = viewModel { DeviceAppsViewState(application.appsRepository) }
     val sheetState = rememberModalBottomSheetState()
     val scope = rememberCoroutineScope()
 

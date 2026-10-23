@@ -59,17 +59,17 @@ import com.implus.gremmarket.ui.deviceapps.AppInfo
 import com.implus.gremmarket.ui.deviceapps.DeviceAppsViewState
 import com.implus.gremmarket.ui.deviceapps.DownloadProgress
 import com.implus.gremmarket.ui.deviceapps.DownloadState
-import com.implus.gremmarket.ui.deviceapps.sampleApps
 import kotlin.math.max
 
 @Composable
 fun AppRow(
+    appId: Int,
     app: AppInfo,
     checked: Boolean,
     onChecked: (Boolean) -> Unit,
     viewState: DeviceAppsViewState
 ) {
-    val downloadState = viewState.activeDownloads[sampleApps.indexOf(app)]
+    val downloadState = viewState.activeDownloads[appId]
 
     val cornerRadius = if (downloadState != null)
         7.dp else 14.dp

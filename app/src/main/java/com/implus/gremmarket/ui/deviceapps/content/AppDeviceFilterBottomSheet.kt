@@ -32,9 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogWindowProvider
 import com.implus.gremmarket.R
-import com.implus.gremmarket.ui.MenuGroup
-import com.implus.gremmarket.ui.MenuItemData
-import com.implus.gremmarket.ui.MenuListItem
+import com.implus.gremmarket.ui.components.MenuGroup
+import com.implus.gremmarket.ui.components.MenuItemData
+import com.implus.gremmarket.ui.components.MenuListItem
 import com.implus.gremmarket.ui.deviceapps.AppDeviceFilter
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -22,7 +22,6 @@ import com.implus.gremmarket.R
 import com.implus.gremmarket.ui.components.ActionIcon
 import com.implus.gremmarket.ui.deviceapps.AppDeviceFilter
 import com.implus.gremmarket.ui.deviceapps.LocalDeviceAppsState
-import com.implus.gremmarket.ui.deviceapps.sampleApps
 
 @Composable
 fun DeviceAppsSelectionManagementTopBar() {
@@ -58,7 +57,7 @@ fun DeviceAppsSelectionManagementTopBar() {
                     if(viewState.appDeviceFilter == AppDeviceFilter.NOT_INSTALLED) {
                         ActionIcon(
                             onClick = {
-                                viewState.startDownload(sampleApps)
+                                viewState.startDownload()
                             },
                             icon = Icons.Outlined.Download
                         )

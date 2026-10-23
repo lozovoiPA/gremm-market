@@ -5,17 +5,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
 
 enum class DeviceAppsManagementLoadingStates() {
     LOADING,
@@ -77,10 +76,9 @@ fun Int.toggleFilter(flag: AppFilters): Int {
     return (this xor flag.flagBit)
 }
 
-class DeviceAppsViewState: ViewModel() {
-    //private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    //private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-
+class DeviceAppsViewState(
+    private val appsRepository: AppsRepository
+): ViewModel() {
     // Симуляция состояний загрузки
     var loadingState by mutableStateOf(DeviceAppsManagementLoadingStates.LOADING)
     // Это флаги фильтров. Контролируют включение/выключение кнопок фильтрации
@@ -91,13 +89,30 @@ class DeviceAppsViewState: ViewModel() {
 
     var selectedApps by mutableStateOf(setOf<Int>())
         private set
-    var activeDownloads by mutableStateOf<Map<Int, DownloadProgress>>(emptyMap())
+    // Индексы отображаемых приложений из apps
+    var shownApps by mutableStateOf<Set<Int>>(emptySet())
         private set
-    var shownApps by mutableStateOf<List<AppInfo>>(emptyList())
-        private set
+
+    // Приложения и загрузки хранятся в репозитории и переживают уход с экрана
+    val apps: List<AppInfo>
+        get() = appsRepository.apps
+    val activeDownloads: Map<Int, DownloadProgress>
+        get() = appsRepository.activeDownloads
 
     val isAnyAppSelected: Boolean
         get() = selectedApps.isNotEmpty()
+
+    init {
+        // Убираем из списка приложения, переставшие подходить под фильтры (например, после установки)
+        viewModelScope.launch {
+            snapshotFlow { appsRepository.apps }
+                .collect { apps ->
+                    shownApps = shownApps.filterTo(mutableSetOf()) { appId ->
+                        apps[appId].appliesTo(appFilters) && apps[appId].appliesTo(appDeviceFilter)
+                    }
+                }
+        }
+    }
 
     fun toggleSelection(appId: Int) {
         selectedApps = if (selectedApps.contains(appId)) {
@@ -113,10 +128,11 @@ class DeviceAppsViewState: ViewModel() {
 
     suspend fun queryShownAppsByFilterWithNoStateChange() {
         try {
+            val apps = appsRepository.apps
             val filteredApps = withContext(Dispatchers.Default) {
                 if (appFilters == 0) {
-                    sampleApps.filter { app ->
-                        app.appliesTo(appDeviceFilter)
+                    apps.indices.filter { appId ->
+                        apps[appId].appliesTo(appDeviceFilter)
                     }
                 } else {
                     AppFilters.entries
@@ -124,15 +140,14 @@ class DeviceAppsViewState: ViewModel() {
                             appFilters.isFilterToggled(filter)
                         }
                         .flatMap { filter ->
-                            sampleApps.filter { app ->
-                                app.appliesTo(filter) &&
-                                        app.appliesTo(appDeviceFilter)
+                            apps.indices.filter { appId ->
+                                apps[appId].appliesTo(filter) &&
+                                        apps[appId].appliesTo(appDeviceFilter)
                             }
                         }
-                        .distinct()
                 }
             }
-            shownApps = filteredApps
+            shownApps = filteredApps.toSet()
 
         } finally {
             Log.d("GREM", "Filtering finished")
@@ -148,11 +163,11 @@ class DeviceAppsViewState: ViewModel() {
                     yield()
                 }
 
+                val apps = appsRepository.apps
                 val filteredApps = withContext(Dispatchers.Default) {
-                        sampleApps.filter { app ->
-                            app.appliesTo(appFilters) && app.appliesTo(appDeviceFilter)
-                        }
-                            .distinct()
+                    apps.indices.filter { appId ->
+                        apps[appId].appliesTo(appFilters) && apps[appId].appliesTo(appDeviceFilter)
+                    }.toSet()
                 }
                 shownApps = filteredApps
 
@@ -169,56 +184,10 @@ class DeviceAppsViewState: ViewModel() {
         //queryShownAppsByFilter(appDeviceFilter, appFilters)
     }
 
-    fun startDownload(apps: List<AppInfo>) {
-        selectedApps.forEach { appIndex ->
-            val app = apps[appIndex]
-            activeDownloads = activeDownloads + (appIndex to DownloadProgress())
-
-            viewModelScope.launch {
-                simulateAppDownload(appIndex, app.sizeBytes)
-            }
-        }
+    fun startDownload() {
+        // Загрузка идет в скоупе приложения и не прерывается при уходе с экрана
+        appsRepository.startDownload(selectedApps)
         selectedApps = emptySet()
-    }
-
-    private suspend fun simulateAppDownload(appId: Int, totalBytes: Long) {
-        var currentProgress = .0f
-        var currentState = DownloadState.RETRIEVAL
-        val app = sampleApps[appId]
-
-        while (currentState != DownloadState.FINISHED) {
-            Log.d("GREM", "App \"${app.name}\" $currentState simulating with progress of $currentProgress")
-
-
-            delay(currentState.getRandomDownloadValue().milliseconds)
-
-            val chunk = currentState.getRandomDownloadChunk()
-            currentProgress = (currentProgress + chunk).coerceAtMost(1f)
-
-            activeDownloads = activeDownloads + (appId to DownloadProgress(
-                progress = currentProgress,
-                downloadState = currentState,
-                downloadedBytes = (totalBytes * currentProgress).toLong(),
-                totalBytes = totalBytes
-            ))
-            if(currentProgress >= 1f) {
-                delay(200.milliseconds)
-                currentState = currentState.advanceState()
-                currentProgress = 0f
-                activeDownloads = activeDownloads + (appId to DownloadProgress(
-                    progress = 0f,
-                    downloadState = currentState
-                ))
-            }
-        }
-
-        delay(1000.milliseconds)
-        activeDownloads = activeDownloads - appId
-        app.installed = true
-
-        if(!(app.appliesTo(appFilters) && app.appliesTo(appDeviceFilter)) && app in shownApps) {
-            shownApps = shownApps - app
-        }
     }
 
     fun clearSelection() {
@@ -277,10 +246,10 @@ data class AppInfo(
     val size: String,
     val icon: String,
     val game: Boolean = false,
-    var installed: Boolean = false,
+    val installed: Boolean = false,
     val iconBgColor: Color = Color.White,
     val sizeBytes: Long = 10_000_000L,
-    var lastUpdated: String = ""
+    val lastUpdated: String = ""
 )
 
 val sampleApps = listOf(
