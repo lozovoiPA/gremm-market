@@ -99,6 +99,8 @@ class DeviceAppsViewState(
     val activeDownloads: Map<Int, DownloadProgress>
         get() = appsRepository.activeDownloads
 
+    var selectedTab by mutableIntStateOf(0)
+
     val isAnyAppSelected: Boolean
         get() = selectedApps.isNotEmpty()
 

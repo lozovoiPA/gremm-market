@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity(){
                 ) {
                     AppNavHost(
                         navController = navController,
-                        startDestination = Destination.DEVICEAPPS
+                        startDestination = Destination.ACCOUNT
                     )
                 }
             }
@@ -137,8 +137,8 @@ fun AccountScreen() {
     SystemSurface() { modifier ->
         AccountScreenScaffold(
             modifier = modifier
-        ) { contentPadding, innerModifier ->
-            AccountScreenContent(contentPadding, innerModifier)
+        ) { contentPadding, innerModifier, listState ->
+            AccountScreenContent(contentPadding, innerModifier, listState)
         }
     }
 }

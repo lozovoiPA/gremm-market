@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.implus.gremmarket.R
 import com.implus.gremmarket.TextSecondary
+import com.implus.gremmarket.badgeSmall
 import com.implus.gremmarket.ui.components.ActionIcon
 import com.implus.gremmarket.ui.deviceapps.AppDeviceFilter
 import com.implus.gremmarket.ui.deviceapps.AppInfo
@@ -145,7 +146,7 @@ fun AppRow(
                 Badge(
                     containerColor = colorResource(R.color.DeviceAppsBottomBarBlue)
                 ) {
-                    Text(text = badgeText, style = MaterialTheme.typography.labelMedium,
+                    Text(text = badgeText, style = badgeSmall,
                         modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp))
                 }
             } else {
@@ -153,7 +154,7 @@ fun AppRow(
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(app.size, maxLines = 1, style = MaterialTheme.typography.labelMedium)
+                    Text(app.size, maxLines = 1, style = badgeSmall)
 
                     if(app.lastUpdated.isNotEmpty()) {
                         Spacer(modifier = Modifier.width(5.dp))
@@ -164,7 +165,7 @@ fun AppRow(
                                 .background(TextSecondary)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
-                        Text("Обновлено ${app.lastUpdated}", maxLines = 1, style = MaterialTheme.typography.labelMedium)
+                        Text("Обновлено ${app.lastUpdated}", maxLines = 1, style = badgeSmall)
                     }
                 }
             }

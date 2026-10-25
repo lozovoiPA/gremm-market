@@ -1,5 +1,6 @@
 package com.implus.gremmarket.ui.components
 
+import androidx.compose.foundation.Indication
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -21,52 +23,74 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.implus.gremmarket.R
 import com.implus.gremmarket.TextSecondary
+import kotlin.math.abs
 
 @Composable
 fun RowMenuItem(
     itemData: MenuItemData,
-    onClick: () -> Unit = {}
+    onClick: () -> Unit = {},
+    clickIndication: Indication? = null,
+    textOffset: Int = 0,
+    titleStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    subtitleStyle: TextStyle = MaterialTheme.typography.bodyMedium
 ) {
-    val titleStyle = MaterialTheme.typography.bodyLarge
-    val subtitleStyle = MaterialTheme.typography.bodyMedium
+    val offsetModifier = Modifier
+        .padding(end = abs(textOffset).dp)
+        .offset(x = (textOffset).dp)
 
     Layout(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(
                 onClick = onClick,
-                indication = null,
+                indication = clickIndication,
                 interactionSource = remember { MutableInteractionSource() },
                 role = Role.Button
             )
             .padding(vertical = 16.dp),
         content = {
-            Icon(
-                imageVector = itemData.icon,
-                contentDescription = null,
-                tint = Color.Gray,
-                modifier = Modifier.size(24.dp)
-            )
+            itemData.icon?.let {
+                Icon(
+                    imageVector = it,
+                    contentDescription = null,
+                    tint = Color.Gray,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+            itemData.iconComposable?.let { it() }
 
-            Column {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                /*
                 Text(
                     text = itemData.title,
                     style = titleStyle,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
+                ) */
+
+                Text(
+                    text = itemData.title,
+                    style = titleStyle,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = offsetModifier
                 )
-                if (itemData.subtitle != null) {
+
+                if(itemData.subtitle != null) {
                     Text(
                         text = itemData.subtitle,
                         style = subtitleStyle,
-                        color = Color.Gray,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                        color = TextSecondary,
+                        modifier = offsetModifier
+                            .padding(top = 4.dp)
                     )
                 }
                 itemData.trailingContent?.invoke()
@@ -161,13 +185,15 @@ fun RowMenuItem2(
             )
             .padding(vertical = 16.dp)
     ) {
-        Icon(
-            imageVector = itemData.icon,
-            contentDescription = null,
-            tint = TextSecondary,
-            modifier = Modifier
-                .size(24.dp)
-        )
+        itemData.icon?.let {
+            Icon(
+                imageVector = it,
+                contentDescription = null,
+                tint = TextSecondary,
+                modifier = Modifier
+                    .size(24.dp)
+            )
+        }
         Spacer(Modifier.width(32.dp))
 
         Column(

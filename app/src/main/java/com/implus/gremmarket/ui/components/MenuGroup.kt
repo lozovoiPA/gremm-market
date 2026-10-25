@@ -16,7 +16,8 @@ import com.implus.gremmarket.R
 @Composable
 fun MenuGroup(
     menuItemsData: List<MenuItemData>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    menuDivider: @Composable () -> Unit = { MenuDivider() }
 ) {
     Surface(
         modifier = modifier
@@ -31,7 +32,7 @@ fun MenuGroup(
             menuItemsData.forEachIndexed { index, item ->
                 MenuListItem(item)
                 if (index < menuItemsData.lastIndex) {
-                    MenuDivider()
+                    menuDivider()
                 }
             }
         }

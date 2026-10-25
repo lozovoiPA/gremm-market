@@ -8,9 +8,6 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
@@ -22,6 +19,7 @@ import com.implus.gremmarket.DeviceAppsLocalNavigation
 import com.implus.gremmarket.R
 import com.implus.gremmarket.TextSecondary
 import com.implus.gremmarket.ui.Destination
+import com.implus.gremmarket.ui.deviceapps.LocalDeviceAppsState
 
 @Composable
 fun DeviceAppsTopBarTabs(
@@ -31,20 +29,12 @@ fun DeviceAppsTopBarTabs(
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    val viewState = LocalDeviceAppsState.current
 
-    var selectedTab by rememberSaveable {
-        mutableIntStateOf(
-            when(currentRoute) {
-                Destination.DEVICEAPPS_GENERAL.route -> 0
-                Destination.DEVICEAPPS_APPS.route -> 1
-                else -> 0
-            }
-        )
-    }
     val tabs = listOf(Destination.DEVICEAPPS_GENERAL, Destination.DEVICEAPPS_APPS)
 
     PrimaryScrollableTabRow(
-        selectedTab,
+        viewState.selectedTab,
         modifier = modifier,
         containerColor = Color.White,
         contentColor = colorResource(R.color.MarketBlue),
@@ -52,17 +42,17 @@ fun DeviceAppsTopBarTabs(
         tabs = {
             tabs.forEachIndexed { index, tab ->
                 Tab(
-                    selected = selectedTab == index,
+                    selected = viewState.selectedTab == index,
                     modifier = Modifier,
                     onClick = {
                         navController.navigate(tab.route)
-                        selectedTab = index
+                        viewState.selectedTab = index
                     },
                     text = {
                         Text(
                             text = tab.label,
                             fontWeight = FontWeight.Normal,
-                            color = if (selectedTab == index) colorResource(R.color.MarketBlue) else TextSecondary
+                            color = if (viewState.selectedTab == index) colorResource(R.color.MarketBlue) else TextSecondary
                         )
                     }
                 )
@@ -72,7 +62,7 @@ fun DeviceAppsTopBarTabs(
         indicator = {
             TabRowDefaults.PrimaryIndicator(
                 modifier = Modifier
-                    .tabIndicatorOffset(selectedTab, matchContentSize = true)
+                    .tabIndicatorOffset(viewState.selectedTab, matchContentSize = true)
                     .offset(y=1.dp),
                 width = Dp.Unspecified,
                 height = 4.dp,

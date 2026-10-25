@@ -19,20 +19,19 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import com.implus.gremmarket.R
 import com.implus.gremmarket.TextSecondary
 
 data class MenuItemData (
-    val icon: ImageVector,
+    val icon: ImageVector? = null,
     val title: String,
     val subtitle: String? = null,
     val trailingText: String? = null,
-    val trailingContent: (@Composable () -> Unit)? = null
+    val trailingContent: (@Composable () -> Unit)? = null,
+    val iconComposable: (@Composable () -> Unit)? = null,
+    val subtitleContent: (@Composable () -> Unit)? = null
 )
 
 @Composable
@@ -42,6 +41,17 @@ fun MenuListItem(
     colors: ListItemColors = ListItemDefaults.colors(containerColor = Color.Transparent),
     onClick: () -> Unit = {},
 ) {
+    val textOffset = 8
+    var titleOffset = 0
+
+    if(itemData.subtitle != null) {
+        titleOffset = -2
+    }
+
+    val offsetModifier = Modifier // Переносим текст ближе к иконке как в GP. ListItem автоматически делает одинаковые промежутки между границой-иконкой и иконкой-текстом
+        .padding(end = textOffset.dp)
+        .offset(x = (-textOffset).dp)
+
     ListItem(
         modifier = modifier
             .clickable(
@@ -51,35 +61,34 @@ fun MenuListItem(
                 role = Role.Button
             ),
         leadingContent = {
-            Icon(
-                imageVector = itemData.icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(26.dp)
-            )
+            if(itemData.icon != null) {
+                Icon(
+                    imageVector = itemData.icon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(26.dp)
+                )
+            } else if (itemData.iconComposable != null) {
+                itemData.iconComposable()
+            }
         },
         headlineContent = {
-            val textOffset = 8
             Text(
                 text = itemData.title,
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = FontFamily.SansSerif,
-                letterSpacing = 0.em,
-                fontWeight = FontWeight(500),
-                fontSize = 3.7.em,
+                style = MaterialTheme.typography.labelMedium,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier // Переносим текст ближе к иконке как в GP. ListItem автоматически делает одинаковые промежутки между границой-иконкой и иконкой-текстом
-                    .padding(end = textOffset.dp)
-                    .offset(x = (-textOffset).dp)
+                modifier = offsetModifier
             )
         },
         supportingContent = itemData.subtitle?.let {
             {
                 Text(
                     text = it,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = TextSecondary
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextSecondary,
+                    modifier = offsetModifier
+                        .padding(top = 4.dp)
                 )
             }
         },
@@ -89,7 +98,7 @@ fun MenuListItem(
                     Text(
                         itemData.trailingText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary
+                        color = TextSecondary,
                     )
                 }
             }
