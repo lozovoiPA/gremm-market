@@ -106,7 +106,7 @@ fun DeviceAppsScreen() {
                 NavHost(
                     navController = navController,
                     route = Destination.DEVICEAPPS.route,
-                    startDestination = Destination.DEVICEAPPS_APPS.route
+                    startDestination = Destination.DEVICEAPPS_GENERAL.route
                 ) {
                     composable(Destination.DEVICEAPPS_GENERAL.route) {
                         DeviceAppsGeneralContent(contentPadding, innerModifier)
