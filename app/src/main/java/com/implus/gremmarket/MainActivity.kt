@@ -61,7 +61,7 @@ class MainActivity : ComponentActivity(){
                 ) {
                     AppNavHost(
                         navController = navController,
-                        startDestination = Destination.ACCOUNT
+                        startDestination = Destination.HOME_GAMES
                     )
                 }
             }
@@ -130,6 +130,7 @@ fun AccountScreen() {
         window?.let {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 it.navigationBarColor = Color.Transparent.toArgb()
+                it.isNavigationBarContrastEnforced = false
             }
         }
     }

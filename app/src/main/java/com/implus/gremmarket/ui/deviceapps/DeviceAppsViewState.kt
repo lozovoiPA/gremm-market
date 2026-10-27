@@ -251,7 +251,14 @@ data class AppInfo(
     val installed: Boolean = false,
     val iconBgColor: Color = Color.White,
     val sizeBytes: Long = 10_000_000L,
-    val lastUpdated: String = ""
+    val lastUpdated: String = "",
+    val iconImageId: Int = 0,
+    val bannerImageId: Int = 0,
+    val rating: String = "",
+    val genre: String = "",
+    val subgenre: String = "",
+    val price: String = "",
+    val shortDescription: String = ""
 )
 
 val sampleApps = listOf(

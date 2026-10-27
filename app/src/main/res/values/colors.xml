@@ -20,4 +20,6 @@
     <color name="MarketAccentBlue">#FFC3E7FF</color>
     <color name="FilterChipBlueText">#FF004976</color>
     <color name="Shadow">#FFDDDDDD</color>
+    <color name="HomeBottomBarIndicator">#FFC3E7FF</color>
+    <color name="HomeBottomBarText">#FF004A77</color>
 </resources>

@@ -34,7 +34,17 @@ val badgeSmall by lazy { TextStyle(
     fontWeight = FontWeight.Medium,
     fontSize = 12.sp,
     lineHeight = 16.sp,
-    letterSpacing = 0.sp
+    letterSpacing = 0.sp,
+    color = TextSecondary
+) }
+
+val badgeMedium by lazy { TextStyle(
+    fontFamily = googleSansFontFamily,
+    fontWeight = FontWeight.Medium,
+    fontSize = 12.sp,
+    lineHeight = 16.sp,
+    letterSpacing = 0.sp,
+    color = TextSecondary
 ) }
 
 fun getAppTypography(): Typography {
